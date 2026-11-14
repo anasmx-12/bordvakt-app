@@ -1,0 +1,4 @@
+opencv-python
+supabase
+python-dotenv
+onnxruntime

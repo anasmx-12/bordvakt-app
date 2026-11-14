@@ -1,0 +1,110 @@
+body{margin:0}
+a{color:#C2410C}
+a:hover{color:#9A3412}
+html{scroll-behavior:smooth}
+@keyframes ninA{from{opacity:0;transform:translateY(-14px) scale(.98)}
+to{opacity:1;transform:none}
+}
+@keyframes ninB{from{opacity:0;transform:translateY(-14px) scale(.98)}
+to{opacity:1;transform:none}
+}
+@keyframes pulse{0%,100%{opacity:1}
+50%{opacity:.35}
+}
+.nin-a{animation:ninA .5s cubic-bezier(.2,.8,.2,1)}
+.nin-b{animation:ninB .5s cubic-bezier(.2,.8,.2,1)}
+.live-dot{animation:pulse 1.6s ease-in-out infinite}
+input[type=range]{accent-color:#C2410C}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #2563EB;outline-offset:2px}
+
+
+/* ==================================================================
+   Animationer och övergångar
+   Allt stängs av för den som valt "minska rörelser" i sin dator/mobil. */
+:root{--ease-out:cubic-bezier(.2,.7,.2,1);--ease-spring:cubic-bezier(.34,1.56,.64,1)}
+html{scroll-padding-top:88px}
+
+@keyframes revealUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes wordUp{from{opacity:0;transform:translateY(.45em) rotate(2deg);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes mockIn{from{opacity:0;transform:perspective(1200px) translateY(40px) rotateX(10deg) scale(.95)}to{opacity:1;transform:none}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes glow{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.55}50%{transform:translate(-46%,-54%) scale(1.12);opacity:.8}}
+@keyframes tilePop{0%{transform:scale(.82)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+@keyframes draw{from{stroke-dashoffset:var(--len,1000)}to{stroke-dashoffset:0}}
+@keyframes shine{from{transform:translateX(-120%) skewX(-20deg)}to{transform:translateX(220%) skewX(-20deg)}}
+
+/* Rullningslist överst som visar hur långt man kommit */
+.scroll-progress{position:fixed;inset:0 0 auto 0;height:3px;z-index:100;background:linear-gradient(90deg,#C2410C,#FB923C);transform-origin:left;transform:scaleX(0);pointer-events:none}
+
+/* Menyn följer med när man rullar (på större skärmar) och blir halvgenomskinlig */
+@media (min-width:900px){
+ .site-header{position:sticky;top:0;z-index:50;transition:background-color .35s,box-shadow .35s,backdrop-filter .35s}
+ .site-header.scrolled{background:rgba(245,244,240,.78)!important;-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px);box-shadow:0 10px 30px -22px rgba(15,20,25,.45)}
+}
+.nav-link{position:relative;transition:color .2s}
+.nav-link::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:2px;border-radius:2px;background:#C2410C;transform:scaleX(0);transform-origin:right;transition:transform .35s var(--ease-out)}
+.nav-link:hover,.nav-link.active{color:#0F1419!important}
+.nav-link:hover::after,.nav-link.active::after{transform:scaleX(1);transform-origin:left}
+
+/* Knappar: lyfts lite, trycks ned vid klick, pilen glider */
+.btn-anim{position:relative;overflow:hidden;transition:transform .25s var(--ease-out),box-shadow .3s,filter .2s,background-color .2s}
+.btn-anim:hover{transform:translateY(-2px);box-shadow:0 12px 24px -14px rgba(15,20,25,.55);filter:brightness(1.07)}
+.btn-anim:active{transform:translateY(0) scale(.97);transition-duration:.08s}
+.btn-anim .arrow,.btn-anim .arrow-up{transition:transform .3s var(--ease-spring)}
+.btn-anim:hover .arrow{transform:translateX(5px)}
+.btn-anim:hover .arrow-up{transform:translate(3px,-3px)}
+.shine::after{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-120%) skewX(-20deg);pointer-events:none}
+.shine:hover::after{animation:shine .9s var(--ease-out)}
+
+/* Hero: texten glider in, ordet för ord i rubriken */
+.js .hero-copy>*{animation:revealUp .8s var(--ease-out) backwards}
+.js .hero-copy>:nth-child(1){animation-delay:.05s}
+.js .hero-copy>:nth-child(2){animation:none}
+.js .hero-copy>:nth-child(3){animation-delay:.55s}
+.js .hero-copy>:nth-child(4){animation-delay:.7s}
+.js .hero-copy>:nth-child(5){animation-delay:.85s}
+.hero-copy h1 .w{display:inline-block;animation:wordUp .7s var(--ease-out) backwards;animation-delay:calc(.15s + var(--i)*45ms)}
+
+/* Surfplattan: tonar in i 3D, svävar sakta, lutar efter musen, mjukt sken bakom */
+.hero-mock{position:relative;perspective:1400px}
+.js .hero-mock{animation:mockIn 1.1s var(--ease-out) .35s backwards}
+.hero-mock::before{content:"";position:absolute;left:50%;top:50%;width:85%;height:75%;border-radius:50%;background:radial-gradient(closest-side,rgba(251,146,60,.45),rgba(251,146,60,0));filter:blur(30px);z-index:0;animation:glow 9s ease-in-out infinite;pointer-events:none}
+.device{position:relative;z-index:1;transform-style:preserve-3d;transition:transform .5s var(--ease-out);animation:float 7s ease-in-out 1.5s infinite}
+.hero-mock.tilting{transition:transform .5s var(--ease-out)}
+#tables>div.pop{animation:tilePop .55s var(--ease-spring)}
+#rest>div{animation:slideIn .45s var(--ease-out) backwards}
+#rest>div:nth-child(2){animation-delay:.06s}
+#rest>div:nth-child(3){animation-delay:.12s}
+
+/* Innehåll som tonar in när man rullar dit */
+.js .reveal{opacity:0}
+.js .reveal.in{opacity:1;animation:revealUp .85s var(--ease-out) backwards;animation-delay:calc(var(--i,0)*110ms)}
+
+/* Kort lyfts när musen är över */
+.lift{transition:transform .4s var(--ease-out),box-shadow .4s,border-color .3s}
+.lift:hover{transform:translateY(-6px);box-shadow:0 26px 46px -28px rgba(15,20,25,.4)}
+.icon-wiggle svg{transition:transform .5s var(--ease-spring)}
+.icon-wiggle:hover svg{transform:rotate(-10deg) scale(1.12)}
+
+/* GDPR-skölden och bocken ritas */
+.js .draw path,.js .draw circle{stroke-dasharray:var(--len,1000);stroke-dashoffset:0}
+.js .gdpr-box.in .draw path,#sentBox:not([hidden]) .draw path,#sentBox:not([hidden]) .draw circle{animation:draw 1.2s var(--ease-out) .35s backwards}
+
+/* Formuläret */
+#demoForm input{transition:border-color .2s,box-shadow .25s}
+#demoForm input:hover{border-color:#6B7280!important}
+#demoForm input:focus{border-color:#0F1419!important;box-shadow:0 0 0 4px rgba(194,65,12,.16);outline:none}
+#sentBox:not([hidden])>div{animation:revealUp .6s var(--ease-out) backwards}
+#formBox{animation:revealUp .5s var(--ease-out) backwards}
+
+/* Reglagen i kalkylatorn */
+input[type=range]{transition:filter .2s}
+input[type=range]:hover{filter:brightness(1.1)}
+.bump{display:inline-block;animation:tilePop .35s var(--ease-spring)}
+
+@media (prefers-reduced-motion:reduce){
+ *,*::before,*::after{animation:none!important;transition:none!important}
+ html{scroll-behavior:auto}
+ .js .reveal{opacity:1}
+}

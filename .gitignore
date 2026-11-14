@@ -1,0 +1,21 @@
+# Hemligheter
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Python
+__pycache__/
+.venv/
+
+# AI-modeller (stora filer)
+models/
+
+# Node / Next.js
+node_modules/
+.next/
+*.tsbuildinfo
+.vercel
+
+# macOS
+.DS_Store

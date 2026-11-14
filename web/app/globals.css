@@ -1,0 +1,259 @@
+@import "tailwindcss";
+
+/* Bordvakts designsystem: samma färger och typsnitt som webbplatsen.
+   Färgerna är vanliga CSS-variabler (inte "inline"), så att färgtema kan bytas i Inställningar. */
+@theme {
+  --color-ink: #0f1419;        /* mörk text, mörka kort */
+  --color-ink-soft: #1a1f26;   /* ram runt surfplattevyn */
+  --color-paper: #f6f5f1;      /* varm bakgrund */
+  --color-paper-soft: #faf9f6; /* ljusare panel */
+  --color-line: #e4e2db;       /* kantlinjer */
+  --color-line-soft: #eeece6;
+  --color-body: #374151;       /* brödtext */
+  --color-muted: #4b5563;      /* etiketter */
+  --color-accent: #c2410c;     /* orange huvudknapp */
+  --color-accent-dark: #9a3412;
+  --color-accent-light: #fdba74;
+  --color-teal: #0f766e;       /* live / ok */
+  --color-teal-light: #e6f2f0;
+  /* Dessertläge. Hex i stället för Tailwinds orange, som ligger utanför vanliga
+     skärmars färgomfång och kunde visas grönt. */
+  --color-dessert: #fb923c;
+  --color-dessert-dark: #ea580c;
+  --color-dessert-light: #fff1e6;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), sans-serif;
+}
+
+/* ------------------------------------------------------------------
+   Inställningar (sätts på <html> av SettingsProvider)                */
+
+/* Färgtema: huvudknapparnas färg */
+html[data-accent="blue"] { --color-accent: #1d4ed8; --color-accent-dark: #1e3a8a; --color-accent-light: #93c5fd; }
+html[data-accent="green"] { --color-accent: #15803d; --color-accent-dark: #14532d; --color-accent-light: #86efac; }
+html[data-accent="purple"] { --color-accent: #7e22ce; --color-accent-dark: #581c87; --color-accent-light: #d8b4fe; }
+html[data-accent="graphite"] { --color-accent: #374151; --color-accent-dark: #111827; --color-accent-light: #9ca3af; }
+
+/* Mörkt tema: hela sidan inverteras (färgtonerna behålls), bilder och video
+   inverteras tillbaka så att kamerabilden ser normal ut. */
+html[data-theme="dark"] {
+  filter: invert(1) hue-rotate(180deg);
+  background: #fff;
+}
+html[data-theme="dark"] :is(img, video, canvas, [data-keep-colors]) {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Större text: förstorar innehållet (menyn behåller sin storlek) */
+html[data-text-size="large"] .app-zoom { zoom: 1.125; }
+html[data-text-size="xlarge"] .app-zoom { zoom: 1.25; }
+
+/* Färre rörelser */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.live-dot {
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+/* Klockan på "Mat klar" ringer lite */
+@keyframes wiggle {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10%, 30%, 50% { transform: rotate(-14deg); }
+  20%, 40% { transform: rotate(14deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot, .animate-ping, [class*="animate-"], .stagger > *, .skeleton, .scroll-reveal { animation: none !important; }
+  a.card:active, button.card:active, a.press:active, button.press:active, .card-lift:active { transform: none; }
+}
+
+input[type="range"] {
+  accent-color: var(--color-accent);
+}
+
+input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------
+   Gemensamma byggstenar. Samma knappar, kort och fält på alla sidor.
+   Ligger i components-lagret så att vanliga Tailwind-klasser vinner. */
+@layer components {
+  .btn {
+    @apply inline-flex min-h-10 select-none items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out enabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-lg {
+    @apply min-h-12 rounded-[10px] px-5 text-[15px];
+  }
+  .btn-sm {
+    @apply min-h-8 rounded-md px-3 text-[13px];
+  }
+  .btn-primary {
+    @apply bg-ink text-white enabled:hover:bg-black;
+  }
+  .btn-accent {
+    @apply bg-accent text-white enabled:hover:bg-accent-dark;
+  }
+  .btn-success {
+    @apply bg-teal text-white enabled:hover:bg-[#0B5E57];
+  }
+  .btn-secondary {
+    @apply border border-[#D6D3CA] bg-white text-ink shadow-[0_1px_1px_rgba(15,20,25,.04)] enabled:hover:border-ink enabled:hover:shadow-[0_2px_6px_rgba(15,20,25,.08)];
+  }
+  .btn-ghost {
+    @apply text-muted enabled:hover:bg-ink/5 enabled:hover:text-ink;
+  }
+  .btn-icon {
+    @apply h-10 w-10 px-0;
+  }
+
+  .card {
+    @apply rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(15,20,25,.04)];
+  }
+  /* Kort som går att trycka på lyfts lite vid hovring */
+  .card-lift {
+    @apply transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,20,25,.08)] active:translate-y-0 active:scale-[0.985];
+  }
+  .card-header {
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-4 py-3 sm:px-5;
+  }
+
+  .field {
+    @apply min-h-11 w-full rounded-lg border border-[#D6D3CA] bg-white px-3 text-sm text-ink outline-none transition-colors placeholder:text-gray-400 focus:border-ink focus:ring-2 focus:ring-ink/10;
+  }
+  .field-label {
+    @apply flex flex-col gap-1.5 text-[13px] font-semibold text-ink;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted;
+  }
+}
+
+/* Vakti, chattens maskot */
+@keyframes vakti-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.animate-vakti-bob { animation: vakti-bob 3s ease-in-out infinite; }
+@keyframes vakti-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+.animate-vakti-blink { animation: vakti-blink 4.5s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes vakti-lift {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(-5deg); }
+}
+.animate-vakti-lift { animation: vakti-lift 1.4s ease-in-out infinite; transform-box: view-box; transform-origin: 20px 92px; }
+@keyframes vakti-shake {
+  0%, 80%, 100% { transform: rotate(0deg); }
+  85% { transform: rotate(-4deg); }
+  95% { transform: rotate(4deg); }
+}
+.animate-vakti-shake { animation: vakti-shake 3s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes vakti-pop {
+  0% { transform: scale(0); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: scale(1.2) translateY(-8px); opacity: 0; }
+}
+.animate-vakti-pop { animation: vakti-pop 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+
+/* ------------------------------------------------------------------
+   Rörelser. Stängs av med Inställningar → Färre rörelser (och mobilens eget val). */
+
+/* Innehåll glider upp när det visas */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-rise { animation: rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Listor: varje rad kommer strax efter den förra */
+.stagger > * { animation: rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(6) { animation-delay: 200ms; }
+.stagger > *:nth-child(7) { animation-delay: 240ms; }
+.stagger > *:nth-child(8) { animation-delay: 280ms; }
+.stagger > *:nth-child(n + 9) { animation-delay: 320ms; }
+
+/* Långa sidor: varje del glider in när man skrollar fram till den. Webbläsaren sköter det
+   själv (ingen JavaScript); äldre webbläsare visar delarna direkt. */
+@supports (animation-timeline: view()) {
+  .scroll-reveal {
+    animation: rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 30%;
+  }
+}
+
+/* Kort och rader som går att trycka på ger efter lite under fingret (mobil och surfplatta) */
+a.card, button.card, a.press, button.press {
+  transition: transform 150ms ease-out, box-shadow 200ms ease-out, color 150ms, background-color 150ms, border-color 150ms;
+}
+a.card:active, button.card:active, a.press:active, button.press:active { transform: scale(0.985); }
+
+/* Laddar: en ljus våg sveper över grå rutor */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.skeleton {
+  border-radius: 0.75rem;
+  background: linear-gradient(90deg, var(--color-line-soft) 25%, var(--color-paper-soft) 50%, var(--color-line-soft) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* Något nytt eller ändrat blinkar till en gång */
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.animate-pop { animation: pop 0.35s ease-out; }
+
+/* Bordets färg glider mjukt till den nya statusen */
+@keyframes status-flash {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 45%, transparent); }
+  100% { box-shadow: 0 0 0 14px transparent; }
+}
+.animate-status-flash { animation: status-flash 0.9s ease-out; }
+
+/* Villkor, integritetspolicy och PUB-avtal */
+.legal h2 { font-family: var(--font-display, inherit); font-weight: 700; font-size: 1.15rem; color: var(--color-ink, inherit); margin-top: 1rem; }
+.legal ul { list-style: disc; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.legal a { text-decoration: underline; font-weight: 600; }
