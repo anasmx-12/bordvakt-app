@@ -115,7 +115,8 @@ if [ -z "$CODE" ]; then
 fi
 CODE="$(printf '%s' "$CODE" | tr -d '[:space:]')"
 CODE="${CODE:-$CURRENT}"
-"$DIR/.venv/bin/python" -c 'import sys, engine_security as s; sys.exit(0 if s.parse_code(sys.argv[1]) else 1)' "$CODE" 2>/dev/null \
+# PYTHONPATH: skriptet kan köras från vilken mapp som helst, engine_security.py ligger i $DIR
+PYTHONPATH="$DIR" "$DIR/.venv/bin/python" -c 'import sys, engine_security as s; sys.exit(0 if s.parse_code(sys.argv[1]) else 1)' "$CODE" 2>/dev/null \
   || fail "Koden ser inte rätt ut. Kopiera hela koden (den börjar med BV1.) och försök igen."
 
 # Spara koden. Service-nyckeln och RESTAURANT_ID behövs inte längre och tas bort.
