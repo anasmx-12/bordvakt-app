@@ -4,7 +4,7 @@ import { ownedTask } from '@/lib/tasks';
 const MISSING_008 = 'Falsklarm kräver en uppdaterad databas. Kör supabase/008_sos_details.sql i Supabase.';
 
 // PATCH /api/tasks/[id] — personalen klarmarkerar en uppgift.
-// { false_alarm: true } = SOS var ett falsklarm (AI:n lär sig av det).
+// { false_alarm: true } = SOS eller Vill ha hjälp var ett falsklarm (AI:n lär sig av det).
 // Körs på servern med service-nyckeln, så webbläsaren behöver aldrig skrivrätt.
 export async function PATCH(req: Request, ctx: RouteContext<'/api/tasks/[id]'>) {
   try {
@@ -13,7 +13,7 @@ export async function PATCH(req: Request, ctx: RouteContext<'/api/tasks/[id]'>) 
     const falseAlarm = body?.false_alarm === true;
     const supabase = serverSupabase();
     const { task } = await ownedTask(supabase, id);
-    if (falseAlarm && task.type !== 'EMERGENCY') throw new UserError('Bara SOS kan vara falsklarm');
+    if (falseAlarm && task.type !== 'EMERGENCY' && task.type !== 'SERVICE') throw new UserError('Bara SOS och Vill ha hjälp kan vara falsklarm');
 
     const update: Record<string, unknown> = { status: 'COMPLETED', resolved_at: new Date().toISOString() };
     if (falseAlarm) {

@@ -89,6 +89,8 @@ CLUTTER_DIRTY = 0.10     # så stor del av bordet får skilja sig från "rent bo
 CLUTTER_FOOD = 0.14      # så mycket mer som måste stå på bordet för att räknas som serverad mat
 HISTORY_SEC = 5          # bordets status jämnas ut över så här många sekunders analyser
 RAISE_SEC = 2.0          # handen ska synas uppräckt i minst halva tiden av de senaste så här många sekunderna
+RAISE_SEC_CAREFUL = 4.0  # vid bord där handen ofta larmat fel: dubbelt så länge, och i 3/4 av tiden
+CAREFUL_MIN_FALSE = 2    # så många Falsklarm på Vill ha hjälp (14 dagar) innan bordet blir försiktigt
 RELEARN_WINDOW_SEC = 180  # efter "avdukat" från personalen: lär in bordet som rent inom så här lång tid
 
 # Akut läge (SOS): en gäst har tappat ett glas eller en tallrik
@@ -481,6 +483,18 @@ def strict_triggers(rows: list[dict], min_false: int = 2) -> dict[str, set[str]]
     return result
 
 
+def careful_hand_tables(rows: list[dict], min_false: int = CAREFUL_MIN_FALSE) -> set[str]:
+    """Bord där Vill ha hjälp (uppräckt hand) ska vara försiktigt, från avslutade uppgifter:
+    minst min_false Falsklarm och fler Falsklarm än riktiga larm."""
+    counts: dict[str, list[int]] = {}
+    for row in rows:
+        if row.get("type") != "SERVICE" or not row.get("table_id"):
+            continue
+        c = counts.setdefault(row["table_id"], [0, 0])
+        c[0 if row.get("false_alarm") else 1] += 1
+    return {table for table, (false, real) in counts.items() if false >= min_false and false > real}
+
+
 def _settled(observations: list[Observation]) -> list[tuple]:
     """Glas, tallrikar och bestick som syntes på samma plats i de flesta av observationerna."""
     result = []
@@ -536,6 +550,7 @@ class TableMemory:
         self.last_status = "AVAILABLE"
         self.clean_streak = 0  # antal analyser i rad som bordet varit ledigt och rent
         self.relearn_until: float | None = None  # personalen har dukat av: lär in bordet som rent
+        self.careful_hand = False  # personalen har tryckt Falsklarm på Vill ha hjälp flera gånger här
         self.peak_guests = 0      # flest sittande gäster under sittningen
         self.cleared_bags = 0     # väskor i bild när maten plockades bort
         self.bill_done = False    # personalen har lämnat notan (eller gästerna har betalat)
@@ -605,8 +620,13 @@ class TableMemory:
         clutters = [o.clutter for o in self.history if o.clutter is not None]
         clutter = median(clutters) if len(clutters) >= 3 else None
         # Handen ska vara uppe en stund: att klia sig i håret eller rätta till glasögonen ger inget larm
-        recent = [o.hand_raised for o, t in zip(self.history, self.times) if now - t <= RAISE_SEC] or [obs.hand_raised]
-        raised = sum(recent) >= 2 and sum(recent) * 2 >= len(recent)
+        if self.careful_hand:
+            # Bordet har gett falsklarm: handen ska vara uppe längre och nästan hela tiden
+            recent = [o.hand_raised for o, t in zip(self.history, self.times) if now - t <= RAISE_SEC_CAREFUL] or [obs.hand_raised]
+            raised = sum(recent) >= 4 and sum(recent) * 4 >= len(recent) * 3
+        else:
+            recent = [o.hand_raised for o, t in zip(self.history, self.times) if now - t <= RAISE_SEC] or [obs.hand_raised]
+            raised = sum(recent) >= 2 and sum(recent) * 2 >= len(recent)
 
         # --- Inga gäster (personal som står vid bordet räknas inte)
         if guests < 1:
@@ -963,6 +983,11 @@ class LocalTableAI:
         """Vad som hände vid bordets pågående Akut läge (None om okänt)."""
         memory = self.memory.get(table_id)
         return memory.sos if memory else None
+
+    def set_careful_hands(self, tables: set[str]):
+        """Bord där personalen ofta tryckt Falsklarm på Vill ha hjälp (från AI.py)."""
+        for table_id in set(self.memory) | tables:
+            self.memory.setdefault(table_id, TableMemory()).careful_hand = table_id in tables
 
     def set_strict(self, strict: dict[str, set[str]]):
         """Tecken som gett falsklarm per bord (från personalens Falsklarm-knapp)."""

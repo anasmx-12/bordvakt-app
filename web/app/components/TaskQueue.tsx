@@ -14,7 +14,7 @@ interface Props {
   selectedTableId: string | null;
   /** false = kameran ger ingen bild eller AI-analysen är avstängd */
   monitoring: boolean;
-  /** falseAlarm = personalen säger att SOS var ett falsklarm */
+  /** falseAlarm = personalen säger att SOS eller Vill ha hjälp var ett falsklarm (AI:n lär sig) */
   onComplete: (id: string, falseAlarm?: boolean) => void;
   onSelectTable?: (id: string | null) => void;
   /** Beställningar som köket gjort klara: ska bäras ut */
@@ -242,7 +242,7 @@ export default function TaskQueue({
                   </span>
                 </button>
                 <div className="flex flex-none gap-2">
-                  {sos && (
+                  {(sos || task.type === 'SERVICE') && (
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => onComplete(task.id, true)}

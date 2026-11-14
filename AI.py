@@ -816,6 +816,7 @@ class Context:
         self.strict_at = 0.0     # när falsklarmen senast lästes in
         self.prep: dict[str, float] = {}  # minuter i köket per rätt (lär sig av beställningarna)
         self.prep_at = 0.0
+        self.careful: set[str] = set()  # bord där handuppräckning ofta larmat fel
 
     def sync(self):
         # Beställningar de senaste 6 timmarna
@@ -914,14 +915,15 @@ class Context:
         self.prep = prep
 
     def load_strict(self):
-        """Falsklarm de senaste 14 dagarna: tecken som larmat fel vid ett bord kräver ett tecken till."""
+        """Falsklarm de senaste 14 dagarna: tecken som larmat fel vid ett bord kräver ett tecken till,
+        och vid bord där Vill ha hjälp ofta larmat fel ska handen vara uppe längre."""
         global sos_details_missing
         self.strict_at = time.time()
         since = datetime.fromtimestamp(time.time() - 14 * 86400, timezone.utc).isoformat()
         try:
             rows = (
-                supabase.table("tasks").select("table_id,sos_trigger,false_alarm")
-                .in_("table_id", table_ids).eq("type", "EMERGENCY").eq("status", "COMPLETED")
+                supabase.table("tasks").select("table_id,type,sos_trigger,false_alarm")
+                .in_("table_id", table_ids).in_("type", ["EMERGENCY", "SERVICE"]).eq("status", "COMPLETED")
                 .gte("created_at", since).execute().data
             )
         except Exception as e:
@@ -930,10 +932,15 @@ class Context:
             else:
                 print(f"Kunde inte hämta falsklarm: {e}")
             return
-        strict = local_ai.strict_triggers(rows)
+        strict = local_ai.strict_triggers([r for r in rows if r.get("type") == "EMERGENCY"])
         local_model.set_strict(strict)
         if strict:
             print(f"Försiktigare SOS efter falsklarm vid {len(strict)} bord.")
+        careful = local_ai.careful_hand_tables(rows)
+        if careful != self.careful:
+            print(f"Vill ha hjälp: handen ska vara uppe längre vid {len(careful)} bord (efter falsklarm).")
+        self.careful = careful
+        local_model.set_careful_hands(careful)
 
 
 ISSUE_NO_CAMERA = "Bordet saknar kamera. Koppla det till en kamera i installationen."
