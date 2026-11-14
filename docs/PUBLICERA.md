@@ -8,7 +8,7 @@ Köp en domän, t.ex. `bordvakt.se` (Loopia, One.com eller Cloudflare). Appen ka
 
 ## 2. Supabase (databasen)
 1. Uppgradera projektet till **Pro**. Då får ni dagliga backuper och databasen pausas inte.
-2. Kör de SQL-filer som inte är körda än i SQL Editor: `014_engine_accounts.sql`, `015_webhooks.sql`, `016_identity.sql`, `017_remove_bankid.sql`, `018_rate_limits.sql`, `019_support_staff.sql` och `020_password_resets.sql`.
+2. Kör de SQL-filer som inte är körda än i SQL Editor: `014_engine_accounts.sql`, `015_webhooks.sql`, `016_identity.sql`, `017_remove_bankid.sql`, `018_rate_limits.sql`, `019_support_staff.sql`, `020_password_resets.sql` och `021_ai_learning.sql`.
 3. Authentication → URL Configuration:
    - Site URL: `https://app.bordvakt.se`
    - Redirect URLs: `https://app.bordvakt.se/**`

@@ -779,24 +779,37 @@ sessions_missing = False  # 012 är inte körd: statistiken sparas inte
 unsaved_sessions: list[dict] = []
 
 
+session_times_missing = False  # 021_ai_learning.sql är inte körd
+
+
 def save_sessions():
     """Sparar avslutade sittningar (för statistiken). Misslyckas det försöker vi igen nästa varv."""
     global sessions_missing
     if sessions_missing:
         return
-    for table_id, start, end, guests in local_model.drain_sessions():
-        unsaved_sessions.append({
+    global session_times_missing
+    iso = lambda t: datetime.fromtimestamp(t, timezone.utc).isoformat() if t else None  # noqa: E731
+    for table_id, start, end, guests, cleared, bill in local_model.drain_sessions():
+        row = {
             "restaurant_id": RESTAURANT_ID, "table_id": table_id, "guests": min(guests, 50),
-            "started_at": datetime.fromtimestamp(start, timezone.utc).isoformat(),
-            "ended_at": datetime.fromtimestamp(end, timezone.utc).isoformat(),
-        })
+            "started_at": iso(start), "ended_at": iso(end),
+        }
+        if not session_times_missing:
+            row.update(cleared_at=iso(cleared), bill_at=iso(bill))  # för inlärningen av notan (021)
+        unsaved_sessions.append(row)
     if not unsaved_sessions:
         return
     try:
         supabase.table("table_sessions").insert(unsaved_sessions).execute()
         unsaved_sessions.clear()
     except Exception as e:
-        if "table_sessions" in str(e) and ("PGRST205" in str(e) or "does not exist" in str(e)):
+        if ("cleared_at" in str(e) or "bill_at" in str(e)) and not session_times_missing:
+            session_times_missing = True  # 021 är inte körd: spara utan tiderna, notan använder fasta minuter
+            for row in unsaved_sessions:
+                row.pop("cleared_at", None)
+                row.pop("bill_at", None)
+            print("Tips: kör supabase/021_ai_learning.sql i Supabase så att AI:n lär sig när gästerna vill ha notan.")
+        elif "table_sessions" in str(e) and ("PGRST205" in str(e) or "does not exist" in str(e)):
             sessions_missing = True
             unsaved_sessions.clear()
             print("Tips: kör supabase/012_growth.sql i Supabase för att få statistik över sittningarna.")
@@ -817,12 +830,15 @@ class Context:
         self.prep: dict[str, float] = {}  # minuter i köket per rätt (lär sig av beställningarna)
         self.prep_at = 0.0
         self.careful: set[str] = set()  # bord där handuppräckning ofta larmat fel
+        self.bill_delay: float | None = None  # inlärda minuter från avplockning till notan
+        self.low_dessert: tuple[set[str], set[int]] = (set(), set())
 
     def sync(self):
         # Beställningar de senaste 6 timmarna
         if not self.orders_missing:
             if time.time() - self.prep_at > PREP_RELOAD_SECONDS:
                 self.load_prep()
+                self.load_habits()
             since = datetime.fromtimestamp(time.time() - 6 * 3600, timezone.utc).isoformat()
             try:
                 rows = (
@@ -913,6 +929,41 @@ class Context:
         if len(prep) != len(self.prep):
             print(f"Väntar på mat: kökets tider kända för {len(prep)} rätter.")
         self.prep = prep
+
+    def load_habits(self):
+        """Restaurangens vanor de senaste 60 dagarna: hur länge gästerna sitter efter maten innan
+        notan, och vid vilka bord och tider de nästan aldrig beställer dessert."""
+        since = datetime.fromtimestamp(time.time() - 60 * 86400, timezone.utc).isoformat()
+        if not session_times_missing:
+            try:
+                rows = (
+                    supabase.table("table_sessions").select("cleared_at,bill_at")
+                    .eq("restaurant_id", RESTAURANT_ID).gte("started_at", since)
+                    .not_.is_("cleared_at", "null").not_.is_("bill_at", "null").limit(5000).execute().data
+                )
+                delay = local_ai.learn_bill_delay(rows)
+                if delay != self.bill_delay:
+                    print(f"Väntar på notan: {f'{delay:.0f} min efter avplockning (inlärt)' if delay else f'{local_ai.BILL_DELAY_MIN:.0f} min (för få sittningar än)'}.")
+                self.bill_delay = delay
+                local_model.set_bill_delay(delay)
+            except Exception as e:
+                if "cleared_at" not in str(e) and "bill_at" not in str(e) and "table_sessions" not in str(e):
+                    print(f"Kunde inte läsa sittningarna: {e}")
+        try:
+            rows = (
+                supabase.table("orders").select("table_id,created_at,served_at,status")
+                .eq("restaurant_id", RESTAURANT_ID).gte("created_at", since).neq("status", "CANCELLED")
+                .order("created_at", desc=True).limit(5000).execute().data
+            )
+        except Exception as e:
+            print(f"Kunde inte läsa beställningarna för dessert: {e}")
+            return
+        low_tables, low_hours = local_ai.learn_dessert(rows)
+        if (low_tables, low_hours) != self.low_dessert:
+            hours = ", ".join(f"{h * 2:02d}–{h * 2 + 2:02d}" for h in sorted(low_hours))
+            print(f"Dessertläge: av vid {len(low_tables)} bord{f' och kl. {hours}' if hours else ''} (gästerna beställer sällan dessert där).")
+        self.low_dessert = (low_tables, low_hours)
+        local_model.set_dessert(low_tables, low_hours)
 
     def load_strict(self):
         """Falsklarm de senaste 14 dagarna: tecken som larmat fel vid ett bord kräver ett tecken till,

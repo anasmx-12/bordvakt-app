@@ -38,7 +38,7 @@ class SessionLogTest(unittest.TestCase):
         self.feed(20 * 60, seen(4))
         self.feed(int(local_ai.EMPTY_GRACE_SEC) + 30, seen(0))
         self.assertEqual(len(self.memory.finished), 1)
-        began, ended, guests = self.memory.finished[0]
+        began, ended, guests = self.memory.finished[0][:3]
         self.assertEqual(began, start)
         self.assertEqual(guests, 4)
         self.assertGreater(ended - began, 20 * 60)

@@ -103,6 +103,14 @@ EMERGENCY = "EMERGENCY"
 # Väntar på notan: gästerna har ätit klart och vill troligen betala
 WANTS_BILL = "WANTS_BILL"
 BILL_DELAY_MIN = float(os.environ.get("BILL_DELAY_MIN", "7"))  # minuter efter avplockning utan ny beställning
+BILL_MIN_SAMPLES = 10    # så många sittningar innan restaurangens egen tid till notan används
+BILL_LEARN_LIMITS = (3.0, 20.0)  # den inlärda tiden hålls mellan 3 och 20 minuter
+DESSERT_MIN_SESSIONS = 12  # så många sittningar (per bord eller tid på dagen) innan dessert kan stängas av där
+DESSERT_MIN_RATE = 0.10    # färre än så här ofta beställer något efter huvudrätten: föreslå ingen dessert
+SESSION_GAP_MIN = 150      # beställningar vid samma bord med längre paus än så = olika sittningar
+RUSH_SHARE = 0.7           # så stor del av borden med gäster = rusning
+RUSH_MIN_TABLES = 3        # och minst så många bord
+RUSH_EARLIER_MIN = 3.0     # under rusning larmar Väntar på mat så här många minuter tidigare
 MIN_SESSION_SEC = 180  # kortare än 3 min räknas inte som en sittning (t.ex. någon som tittar in)
 BILL_EARLY_MIN = 2.0  # tidigast så här många minuter efter avplockning om gästerna gör sig redo att gå
 
@@ -495,6 +503,62 @@ def careful_hand_tables(rows: list[dict], min_false: int = CAREFUL_MIN_FALSE) ->
     return {table for table, (false, real) in counts.items() if false >= min_false and false > real}
 
 
+def learn_bill_delay(rows: list[dict]) -> float | None:
+    """Minuter efter avplockning tills gästerna vill ha notan, från restaurangens sittningar
+    (cleared_at, bill_at). Medianen minus en minut (personalen behöver hinna fram), inom
+    BILL_LEARN_LIMITS. None tills det finns BILL_MIN_SAMPLES sittningar."""
+    delays = []
+    for row in rows:
+        cleared, bill = _ts(row.get("cleared_at")), _ts(row.get("bill_at"))
+        if cleared is None or bill is None:
+            continue
+        minutes = (bill - cleared) / 60
+        if 0 < minutes <= 90:
+            delays.append(minutes)
+    if len(delays) < BILL_MIN_SAMPLES:
+        return None
+    low, high = BILL_LEARN_LIMITS
+    return min(high, max(low, median(delays) - 1))
+
+
+def learn_dessert(rows: list[dict]) -> tuple[set[str], set[int]]:
+    """Bord och tider på dagen (tvåtimmarsperioder, hour // 2 i lokal tid) där gästerna nästan
+    aldrig beställer något mer efter huvudrätten. rows: beställningar (table_id, created_at, served_at)."""
+    by_table: dict[str, list[tuple[float, float | None]]] = {}
+    for row in rows:
+        created = _ts(row.get("created_at"))
+        if created is None or not row.get("table_id") or row.get("status") == "CANCELLED":
+            continue
+        by_table.setdefault(row["table_id"], []).append((created, _ts(row.get("served_at"))))
+
+    tables: dict[str, list[int]] = {}   # bord -> [sittningar, med något efter maten]
+    hours: dict[int, list[int]] = {}    # tvåtimmarsperiod -> samma
+    for table_id, orders in by_table.items():
+        orders.sort()
+        sittings: list[list[tuple[float, float | None]]] = []
+        for o in orders:
+            if sittings and o[0] - sittings[-1][-1][0] <= SESSION_GAP_MIN * 60:
+                sittings[-1].append(o)
+            else:
+                sittings.append([o])
+        for sitting in sittings:
+            served = [s for _, s in sitting if s is not None]
+            if not served:
+                continue  # maten kom aldrig fram (eller klarmarkerades inte): säger inget
+            first_served = min(served)
+            more = any(created > first_served + 60 for created, _ in sitting)
+            bucket = time.localtime(sitting[0][0]).tm_hour // 2
+            for store, key in ((tables, table_id), (hours, bucket)):
+                c = store.setdefault(key, [0, 0])
+                c[0] += 1
+                c[1] += more
+
+    def low(store):
+        return {k for k, (n, more) in store.items() if n >= DESSERT_MIN_SESSIONS and more / n < DESSERT_MIN_RATE}
+
+    return low(tables), low(hours)
+
+
 def _settled(observations: list[Observation]) -> list[tuple]:
     """Glas, tallrikar och bestick som syntes på samma plats i de flesta av observationerna."""
     result = []
@@ -551,10 +615,16 @@ class TableMemory:
         self.clean_streak = 0  # antal analyser i rad som bordet varit ledigt och rent
         self.relearn_until: float | None = None  # personalen har dukat av: lär in bordet som rent
         self.careful_hand = False  # personalen har tryckt Falsklarm på Vill ha hjälp flera gånger här
+        self.bill_delay_min = BILL_DELAY_MIN  # minuter efter avplockning till notan (lärs in per restaurang)
+        self.no_dessert = False   # här och nu beställer gästerna nästan aldrig dessert
+        self.rush = False         # de flesta borden har gäster: larma tidigare om maten dröjer
+        self.cleared_at: float | None = None  # när maten plockades bort under sittningen
+        self.bill_at: float | None = None     # när notan kom (personalen tryckte Klar, eller betalt i appen)
         self.peak_guests = 0      # flest sittande gäster under sittningen
         self.cleared_bags = 0     # väskor i bild när maten plockades bort
         self.bill_done = False    # personalen har lämnat notan (eller gästerna har betalat)
-        self.finished: list[tuple[float, float, int]] = []  # avslutade sittningar (start, slut, gäster) för statistiken
+        # Avslutade sittningar (start, slut, gäster, avplockad, notan) för statistiken och inlärningen
+        self.finished: list[tuple[float, float, int, float | None, float | None]] = []
 
     def update(self, obs: Observation, now: float, orders: OrderInfo | None = None) -> str:
         status = self._decide(obs, now, orders)
@@ -592,11 +662,15 @@ class TableMemory:
         self.peak_guests = 0
         self.cleared_bags = 0
         self.bill_done = False
+        self.cleared_at = None
+        self.bill_at = None
 
-    def bill_brought(self):
+    def bill_brought(self, now: float | None = None):
         """Personalen har tryckt Klar på notan: fråga inte igen under sittningen
         (och föreslå inte dessert efter notan)."""
         self.bill_done = self.dessert_done = True
+        if self.session_start is not None and self.bill_at is None:
+            self.bill_at = now or time.time()
 
     def _empty_table(self, drinks: float, dishes: float, clutter: float | None) -> str:
         if self.clean_drinks is None:
@@ -636,7 +710,7 @@ class TableMemory:
                 if now - self.empty_since < EMPTY_GRACE_SEC:
                     return "OCCUPIED"  # t.ex. ett toalettbesök
                 if self.empty_since - self.session_start >= MIN_SESSION_SEC:
-                    self.finished.append((self.session_start, self.empty_since, max(1, self.peak_guests)))
+                    self.finished.append((self.session_start, self.empty_since, max(1, self.peak_guests), self.cleared_at, self.bill_at))
                 self.session_start = None  # sittningen är slut
             return self._empty_table(drinks, dishes, clutter)
 
@@ -677,11 +751,12 @@ class TableMemory:
 
         if not self.served:
             # Köket vet hur lång tid rätterna brukar ta: maten är sen först när den tiden gått
+            earlier = RUSH_EARLIER_MIN * 60 if self.rush else 0
             if orders is not None and orders.food_deadline is not None and orders.waiting_since:
-                return "AWAITING_FOOD" if now > orders.food_deadline else "OCCUPIED"
+                return "AWAITING_FOOD" if now > orders.food_deadline - earlier else "OCCUPIED"
             # Annars räknas väntetiden från beställningen om det finns en, eller från när de satte sig
             waiting_from = max(self.session_start, orders.waiting_since) if orders and orders.waiting_since else self.session_start
-            if now - waiting_from > FOOD_WAIT_MIN * 60:
+            if now - waiting_from > FOOD_WAIT_MIN * 60 - earlier:
                 return "AWAITING_FOOD"
             return "OCCUPIED"
 
@@ -693,10 +768,11 @@ class TableMemory:
         # Maten har serverats och plockats bort
         if self.cleared_since is None:
             self.cleared_since = now
+            self.cleared_at = self.cleared_at or now
             self.cleared_bags = int(median(o.bags for o in self.history))
         if self._wants_bill(now, guests, orders):
             return WANTS_BILL
-        if not self.dessert_done and now - self.cleared_since > DESSERT_DELAY_SEC:
+        if not self.dessert_done and not self.no_dessert and now - self.cleared_since > DESSERT_DELAY_SEC:
             return "DESSERT_OPPORTUNITY"
         return "OCCUPIED"
 
@@ -713,9 +789,10 @@ class TableMemory:
             mine = [status for created, status in orders.orders if created >= self.session_start - 300]
             if mine and all(status == "COMPLETED" for status in mine):
                 self.bill_done = self.dessert_done = True  # allt är betalt och avslutat i appen
+                self.bill_at = self.bill_at or now
                 return False
         waited = now - self.cleared_since
-        if waited >= BILL_DELAY_MIN * 60:
+        if waited >= self.bill_delay_min * 60:
             return True
         if waited < BILL_EARLY_MIN * 60:
             return False
@@ -984,6 +1061,29 @@ class LocalTableAI:
         memory = self.memory.get(table_id)
         return memory.sos if memory else None
 
+    def update_rush(self):
+        """Rusning: de flesta borden har gäster. Då larmar Väntar på mat tidigare."""
+        seated = sum(m.session_start is not None for m in self.memory.values())
+        total = len(self.memory)
+        rush = seated >= RUSH_MIN_TABLES and total > 0 and seated / total >= RUSH_SHARE
+        for memory in self.memory.values():
+            memory.rush = rush
+
+    def set_bill_delay(self, minutes: float | None):
+        """Restaurangens egen tid från avplockning till notan (None = BILL_DELAY_MIN)."""
+        self.bill_delay = minutes or BILL_DELAY_MIN
+        for memory in self.memory.values():
+            memory.bill_delay_min = self.bill_delay
+
+    def set_dessert(self, low_tables: set[str], low_hours: set[int]):
+        """Bord och tider på dagen där gästerna nästan aldrig beställer dessert."""
+        self.low_dessert = (low_tables, low_hours)
+
+    def _apply_learning(self, tid: str, memory: TableMemory, now: float):
+        memory.bill_delay_min = getattr(self, "bill_delay", BILL_DELAY_MIN)
+        low_tables, low_hours = getattr(self, "low_dessert", (set(), set()))
+        memory.no_dessert = tid in low_tables or time.localtime(now).tm_hour // 2 in low_hours
+
     def set_careful_hands(self, tables: set[str]):
         """Bord där personalen ofta tryckt Falsklarm på Vill ha hjälp (från AI.py)."""
         for table_id in set(self.memory) | tables:
@@ -994,8 +1094,8 @@ class LocalTableAI:
         for table_id in set(self.memory) | set(strict):
             self.memory.setdefault(table_id, TableMemory()).watch.strict = strict.get(table_id, set())
 
-    def drain_sessions(self) -> list[tuple[str, float, float, int]]:
-        """Avslutade sittningar sedan förra anropet: (bord-id, start, slut, gäster)."""
+    def drain_sessions(self) -> list[tuple[str, float, float, int, float | None, float | None]]:
+        """Avslutade sittningar sedan förra anropet: (bord-id, start, slut, gäster, avplockad, notan)."""
         out = []
         for table_id, memory in self.memory.items():
             out.extend((table_id, *s) for s in memory.finished)
@@ -1202,8 +1302,12 @@ class LocalTableAI:
 
         result: dict[int, tuple[str, str | None]] = {}
         for table in tables:
+            self.memory.setdefault(table["id"], TableMemory())
+        self.update_rush()
+        for table in tables:
             tid = table["id"]
-            memory = self.memory.setdefault(tid, TableMemory())
+            memory = self.memory[tid]
+            self._apply_learning(tid, memory, now)
             if tid in blind:
                 # Ett SOS släpps inte bara för att kameran tappar bordet en stund
                 result[table["table_number"]] = (EMERGENCY, None) if memory.sos_since else (CAMERA_BLIND, blind[tid])
