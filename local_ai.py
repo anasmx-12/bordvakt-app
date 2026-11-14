@@ -319,6 +319,67 @@ class OrderInfo:
     waiting_since: float | None = None  # äldsta beställning som inte är serverad
     served_at: float | None = None      # senast serverade beställning
     orders: tuple = ()                  # (skapad, status) för bordets beställningar
+    food_deadline: float | None = None  # när maten borde ha kommit, enligt köket (se food_deadline)
+
+
+# ------------------------------------------------------------ Kökets tider
+# Väntar på mat räknas mot hur lång tid rätterna brukar ta i just den här restaurangens kök,
+# inte en fast tid för allt: en sallad är sen efter 11 minuter, en gryta först efter 50.
+
+PREP_MIN_SAMPLES = 3     # så många gånger en rätt måste ha lagats innan tiden används (som webbappen)
+PREP_MAX_MIN = 180       # längre än så: beställningen glömdes att klarmarkeras, räknas inte
+FOOD_GRACE_MIN = 5.0     # minsta marginal innan maten räknas som sen
+FOOD_GRACE_SHARE = 0.25  # eller en fjärdedel av rättens tid, om det är mer
+
+
+def _dish(name) -> str:
+    return name.strip().lower() if isinstance(name, str) else ""
+
+
+def _ts(value) -> float | None:
+    if not isinstance(value, str) or not value:
+        return None
+    from datetime import datetime
+
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def learn_prep_times(rows: list[dict]) -> dict[str, float]:
+    """Minuter från beställning till klar i köket (median) per rätt, i gemener.
+    rows: beställningar med items, created_at och ready_at."""
+    times: dict[str, list[float]] = {}
+    for row in rows:
+        created, ready = _ts(row.get("created_at")), _ts(row.get("ready_at"))
+        items = row.get("items")
+        if created is None or ready is None or not isinstance(items, list):
+            continue
+        minutes = (ready - created) / 60
+        if minutes <= 0 or minutes > PREP_MAX_MIN:
+            continue
+        for item in items:
+            name = _dish(item.get("name")) if isinstance(item, dict) else ""
+            if name:
+                times.setdefault(name, []).append(minutes)
+    return {name: median(list_) for name, list_ in times.items() if len(list_) >= PREP_MIN_SAMPLES}
+
+
+def food_deadline(waiting: list[tuple[float, list]], prep: dict[str, float]) -> float | None:
+    """När maten senast borde ha kommit till bordet. waiting: (skapad, rättnamn) för
+    beställningar som inte är klara. Den rätt som tar längst tid i en beställning räknas;
+    rätter utan historik får FOOD_WAIT_MIN. Den beställning som blir sen först avgör."""
+    deadlines = []
+    for created, names in waiting:
+        known = [prep[_dish(n)] for n in names if _dish(n) in prep]
+        if known:
+            slowest = max(known)
+            minutes = slowest + max(FOOD_GRACE_MIN, slowest * FOOD_GRACE_SHARE)
+        else:
+            minutes = FOOD_WAIT_MIN
+        deadlines.append(created + minutes * 60)
+    return min(deadlines) if deadlines else None
 
 
 @dataclass
@@ -595,7 +656,10 @@ class TableMemory:
             return "OCCUPIED"
 
         if not self.served:
-            # Väntetiden räknas från beställningen om det finns en, annars från när de satte sig
+            # Köket vet hur lång tid rätterna brukar ta: maten är sen först när den tiden gått
+            if orders is not None and orders.food_deadline is not None and orders.waiting_since:
+                return "AWAITING_FOOD" if now > orders.food_deadline else "OCCUPIED"
+            # Annars räknas väntetiden från beställningen om det finns en, eller från när de satte sig
             waiting_from = max(self.session_start, orders.waiting_since) if orders and orders.waiting_since else self.session_start
             if now - waiting_from > FOOD_WAIT_MIN * 60:
                 return "AWAITING_FOOD"

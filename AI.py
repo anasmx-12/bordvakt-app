@@ -83,6 +83,7 @@ ANALYZE_DECODE_SEC = min(0.5, FRAME_INTERVAL / 2)
 CONFIG_RELOAD_SECONDS = 60
 CONTEXT_SECONDS = 5  # hur ofta beställningar och avdukningar hämtas
 STRICT_RELOAD_SECONDS = 300  # hur ofta falsklarmen läses in
+PREP_RELOAD_SECONDS = 600    # hur ofta kökets tider per rätt räknas om
 
 # Vilken uppgift en status skapar
 TASK_FOR_STATUS = {
@@ -813,17 +814,22 @@ class Context:
         self.orders_missing = False
         self.restored = False  # har väntande SOS lästs in efter start?
         self.strict_at = 0.0     # när falsklarmen senast lästes in
+        self.prep: dict[str, float] = {}  # minuter i köket per rätt (lär sig av beställningarna)
+        self.prep_at = 0.0
 
     def sync(self):
         # Beställningar de senaste 6 timmarna
         if not self.orders_missing:
+            if time.time() - self.prep_at > PREP_RELOAD_SECONDS:
+                self.load_prep()
             since = datetime.fromtimestamp(time.time() - 6 * 3600, timezone.utc).isoformat()
             try:
                 rows = (
-                    supabase.table("orders").select("table_id,status,created_at,served_at")
+                    supabase.table("orders").select("table_id,status,created_at,served_at,items")
                     .eq("restaurant_id", RESTAURANT_ID).gte("created_at", since).neq("status", "CANCELLED").execute().data
                 )
                 info: dict[str, local_ai.OrderInfo] = {}
+                waiting: dict[str, list] = {}  # beställningar som köket inte gjort klara, per bord
                 for row in rows:
                     o = info.setdefault(row["table_id"], local_ai.OrderInfo())
                     created_at = parse_time(row["created_at"])
@@ -833,10 +839,15 @@ class Context:
                         created = parse_time(row["created_at"])
                         if created and (o.waiting_since is None or created < o.waiting_since):
                             o.waiting_since = created
+                        if created:  # även READY: gästen väntar tills maten står på bordet
+                            names = [i.get("name") for i in (row.get("items") or []) if isinstance(i, dict)]
+                            waiting.setdefault(row["table_id"], []).append((created, names))
                     # served_at ligger kvar om någon backar SERVED -> READY, så kolla statusen också
                     served = parse_time(row["served_at"]) if row["status"] in ("SERVED", "COMPLETED") else None
                     if served and (o.served_at is None or served > o.served_at):
                         o.served_at = served
+                for table_id, orders in waiting.items():
+                    info[table_id].food_deadline = local_ai.food_deadline(orders, self.prep)
                 local_model.set_orders(info)
             except Exception as e:
                 if "orders" in str(e) and ("PGRST205" in str(e) or "does not exist" in str(e)):
@@ -883,6 +894,24 @@ class Context:
                 local_model.mark_clean(row["table_id"])
         except Exception as e:
             print(f"Kunde inte hämta avdukningar: {e}")
+
+    def load_prep(self):
+        """Hur lång tid rätterna brukar ta i köket, från beställningarna de senaste 60 dagarna."""
+        self.prep_at = time.time()
+        since = datetime.fromtimestamp(time.time() - 60 * 86400, timezone.utc).isoformat()
+        try:
+            rows = (
+                supabase.table("orders").select("items,created_at,ready_at")
+                .eq("restaurant_id", RESTAURANT_ID).gte("created_at", since).not_.is_("ready_at", "null")
+                .order("created_at", desc=True).limit(5000).execute().data
+            )
+        except Exception as e:
+            print(f"Kunde inte läsa kökets tider: {e}")
+            return
+        prep = local_ai.learn_prep_times(rows)
+        if len(prep) != len(self.prep):
+            print(f"Väntar på mat: kökets tider kända för {len(prep)} rätter.")
+        self.prep = prep
 
     def load_strict(self):
         """Falsklarm de senaste 14 dagarna: tecken som larmat fel vid ett bord kräver ett tecken till."""
