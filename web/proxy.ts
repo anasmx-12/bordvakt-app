@@ -70,7 +70,7 @@ function sameOrigin(request: NextRequest) {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith('/api/') && pathname !== '/api/billing/webhook' && !pathname.startsWith('/api/cron/') && !pathname.startsWith('/api/hooks/')) {
+  if (pathname.startsWith('/api/') && pathname !== '/api/billing/webhook' && !pathname.startsWith('/api/cron/') && !pathname.startsWith('/api/hooks/') && !pathname.startsWith('/api/desk/')) {
     const write = WRITE.has(request.method);
     if (write && !sameOrigin(request)) {
       return Response.json({ error: 'Anropet nekades (fel ursprung).' }, { status: 403 });
@@ -90,6 +90,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.rewrite(new URL('/landing/index.html', request.url));
   }
   if (pathname === '/api/billing/webhook') return NextResponse.next();
+  // Supportsajten (bordvakt support): egen nyckel + personalens inloggning, kontrolleras i
+  // app/api/desk (lib/desk/gate.ts). Anropen kommer från supportsajtens server, inte en webbläsare.
+  if (pathname.startsWith('/api/desk/')) return NextResponse.next();
   // Gästernas beställningssida (QR-koden på bordet): öppen utan inloggning.
   // Rutterna kontrollerar själva QR-koden, prenumerationen och om QR-beställning är på.
   if (pathname.startsWith('/b/') || pathname.startsWith('/api/guest/')) return NextResponse.next();

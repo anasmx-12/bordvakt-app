@@ -11,6 +11,8 @@ export interface Mail {
   subject: string;
   text: string;
   replyTo?: string;
+  /** Avsändarens namn. Standard: "Bordvakt". */
+  fromName?: string;
 }
 
 const GMAIL_USER = process.env.GMAIL_USER?.trim();
@@ -29,7 +31,7 @@ export async function sendMail(mail: Mail): Promise<{ sent: boolean; via: 'gmail
         secure: true,
         auth: { user: GMAIL_USER, pass: GMAIL_PASSWORD },
       });
-      await gmail.sendMail({ from: `${FROM_NAME} <${GMAIL_USER}>`, to: mail.to, subject: mail.subject, text: mail.text, replyTo: mail.replyTo });
+      await gmail.sendMail({ from: `${mail.fromName ?? FROM_NAME} <${GMAIL_USER}>`, to: mail.to, subject: mail.subject, text: mail.text, replyTo: mail.replyTo });
       return { sent: true, via: 'gmail' };
     }
     if (RESEND_KEY) {
@@ -37,7 +39,7 @@ export async function sendMail(mail: Mail): Promise<{ sent: boolean; via: 'gmail
         method: 'POST',
         headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: process.env.MAIL_FROM || `${FROM_NAME} <onboarding@resend.dev>`,
+          from: process.env.MAIL_FROM || `${mail.fromName ?? FROM_NAME} <onboarding@resend.dev>`,
           to: [mail.to],
           subject: mail.subject,
           text: mail.text,

@@ -30,6 +30,8 @@ Köp en domän, t.ex. `bordvakt.se` (Loopia, One.com eller Cloudflare). Appen ka
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | från `web/.env.local` |
 | `CRON_SECRET` | en lång slumpad sträng, t.ex. från `openssl rand -hex 32` |
 | `DB_WEBHOOK_SECRET` | en annan lång slumpad sträng (`openssl rand -hex 32`) |
+| `SUPPORT_API_SECRET` | en tredje slumpad sträng (`openssl rand -hex 32`), samma i supportsajten |
+| `SUPPORT_SITE_URL` | `https://support.bordvakt.se` |
 
 4. Koppla domänen (Settings → Domains). https ordnas automatiskt.
 5. Kör sedan sista raden i `supabase/015_webhooks.sql` med er adress och samma `DB_WEBHOOK_SECRET`.
@@ -89,10 +91,13 @@ webhook (steg 4), vilket redan ingår i `customer.subscription.*`.
 6. **Radera `.env.backup-före-installation`** när AI-datorn fungerar. Den innehåller huvudnyckeln.
 
 ## 10b. Supportsajten (support.bordvakt.se)
-1. Nytt Vercel-projekt med mappen `bordvakt support`. Samma Supabase-, Stripe- och Gmail-nycklar som webbappen.
-2. `NEXT_PUBLIC_SITE_URL=https://support.bordvakt.se` och `CUSTOMER_SITE_URL` = webbappens adress.
+Supportsajten har ingen databasnyckel, Stripe-nyckel eller mejl. Den styr bara webbappen.
+1. Nytt Vercel-projekt med mappen `bordvakt support` (repot `bordvakt-support`).
+2. Miljövariabler: `NEXT_PUBLIC_SUPABASE_URL` och `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publika),
+   `BORDVAKT_API_URL=https://app.bordvakt.se`, `SUPPORT_API_SECRET` (samma som i webbappen) och
+   `NEXT_PUBLIC_SITE_URL=https://support.bordvakt.se`.
 3. Lägg till domänen support.bordvakt.se i projektet.
-4. Kör `npm run create-admin` en gång (på datorn) och logga in med länken. Bjud in resten under Personal.
+4. Kör `npm run create-support-admin` en gång i `web/` (på datorn) och logga in med länken. Bjud in resten under Personal.
 Se `bordvakt support/README.md`.
 
 ## 11. Testa allt på riktigt
