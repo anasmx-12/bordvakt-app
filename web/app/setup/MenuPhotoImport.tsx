@@ -3,6 +3,10 @@
 import { useRef, useState } from 'react';
 import { Camera, Loader2, Trash2 } from 'lucide-react';
 import SectionLabel from '../components/SectionLabel';
+import { batches, fitUnder, shrinkImage } from '@/lib/shrinkImage';
+
+/** Varje foto för sig måste rymmas i ett anrop. */
+const fitEach = (photos: Blob[]) => Promise.all(photos.map(async (p) => (await fitUnder([p], undefined, 2400))[0]));
 
 interface DraftItem {
   name: string;
@@ -25,13 +29,24 @@ export default function MenuPhotoImport({ onImported }: { onImported: () => void
     if (!files?.length) return;
     setBusy('read');
     setError(null);
-    const form = new FormData();
-    [...files].slice(0, 8).forEach((f) => form.append('photo', f));
     try {
-      const res = await fetch('/api/menu/analyze', { method: 'POST', body: form });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? 'Kunde inte läsa menyn');
-      setDraft(body.categories);
+      // Hög upplösning så att texten går att läsa, och flera anrop om fotona inte ryms i ett
+      const photos = await Promise.all([...files].slice(0, 8).map((f) => shrinkImage(f, 2400, 0.85)));
+      const merged: DraftCategory[] = [];
+      for (const group of batches(await fitEach(photos))) {
+        const form = new FormData();
+        group.forEach((b, i) => form.append('photo', b, `meny-${i + 1}.jpg`));
+        const res = await fetch('/api/menu/analyze', { method: 'POST', body: form });
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 413) throw new Error('Fotona är för stora. Försök med färre foton åt gången.');
+        if (!res.ok) throw new Error(body.error ?? 'Kunde inte läsa menyn');
+        for (const c of (body.categories ?? []) as DraftCategory[]) {
+          const same = merged.find((m) => m.name.trim().toLowerCase() === c.name.trim().toLowerCase());
+          if (same) same.items.push(...c.items);
+          else merged.push(c);
+        }
+      }
+      setDraft(merged);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Kunde inte läsa menyn');
     } finally {

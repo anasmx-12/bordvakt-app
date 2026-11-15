@@ -12,8 +12,16 @@ import { getSettings } from '@/lib/settings';
 /** Dit man skickas efter inloggning: ?next=/kitchen o.s.v., annars matsalen. */
 function nextPath() {
   const next = new URLSearchParams(window.location.search).get('next');
-  // Bara sökvägar på den här sidan, aldrig en annan webbplats
-  return next && next.startsWith('/') && !next.startsWith('//') ? next : getSettings().startPage;
+  // Bara sökvägar på den här sidan, aldrig en annan webbplats. Webbläsaren läser "/\" som "//",
+  // så adressen tolkas och jämförs med sidans egen i stället för att bara titta på tecknen.
+  if (!next || !next.startsWith('/')) return getSettings().startPage;
+  try {
+    const url = new URL(next, window.location.origin);
+    if (url.origin === window.location.origin) return url.pathname + url.search + url.hash;
+  } catch {
+    // ogiltig adress
+  }
+  return getSettings().startPage;
 }
 
 export default function LoginPage() {

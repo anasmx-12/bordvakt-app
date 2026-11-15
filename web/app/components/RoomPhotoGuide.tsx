@@ -3,30 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUp, Camera, Check, ChevronLeft, ChevronRight, DoorOpen, ImageUp, Loader2, SkipForward, Sparkles, X } from 'lucide-react';
 import { PHOTO_VIEWS, PhotoViewId } from '@/lib/photoViews';
+import { shrinkImage } from '@/lib/shrinkImage';
 
 export type RoomPhotos = Partial<Record<PhotoViewId, Blob>>;
-
-const MAX_SIDE = 1600;
-
-/** Krymper fotot innan uppladdning: snabbare analys. */
-async function shrinkImage(file: File): Promise<Blob> {
-  try {
-    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
-    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    return await new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob'))), 'image/jpeg', 0.85)
-    );
-  } catch {
-    // Webbläsaren kunde inte läsa bilden (t.ex. HEIC i Chrome)
-    if (['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return file;
-    throw new Error('Bildformatet stöds inte. Använd JPG eller PNG.');
-  }
-}
 
 interface Props {
   busy: boolean;

@@ -7,6 +7,7 @@ import { ELEMENT_KINDS, ELEMENT_LABELS, ElementKind } from '@/lib/floorPlan';
 import FloorPlan from './FloorPlan';
 import SectionLabel from './SectionLabel';
 import RoomPhotoGuide, { RoomPhotos } from './RoomPhotoGuide';
+import { fitUnder } from '@/lib/shrinkImage';
 import { supabase } from '@/lib/supabase';
 import { FloorPlanDraft, PlanElement, PlanTable, TABLE_SHAPES } from '@/lib/floorPlan';
 import { DiningTable, TableShape } from '@/lib/types';
@@ -118,10 +119,14 @@ export default function FloorPlanEditor({ onSaved }: Props) {
     setError(null);
     setNotice(null);
     try {
+      // Alla foton analyseras tillsammans, så de måste rymmas i ett anrop
+      const entries = Object.entries(photos) as [string, Blob][];
+      const blobs = await fitUnder(entries.map(([, b]) => b));
       const form = new FormData();
-      for (const [view, blob] of Object.entries(photos)) form.append(`photo:${view}`, blob, `${view}.jpg`);
+      entries.forEach(([view], i) => form.append(`photo:${view}`, blobs[i], `${view}.jpg`));
       const res = await fetch('/api/floor-plan/analyze', { method: 'POST', body: form });
       const body = await res.json().catch(() => ({}));
+      if (res.status === 413) throw new Error('Fotona är för stora. Ta färre foton och försök igen.');
       if (!res.ok) throw new Error(body.error ?? 'Analysen misslyckades');
       setDraft(withUids(body as FloorPlanDraft));
       setDirty(true);
