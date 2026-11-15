@@ -477,6 +477,18 @@ const id: Dict = {
   'sum.empty': "Belum ada angka hari ini.",
   'sum.note': "Angka yang sama dikirim lewat email pagi pukul 07.00. Tidak ada yang ditutup atau direset.",
   'sum.error': "Tidak dapat memuat angka hari ini.",
+  'install.title': "Tambahkan Bordvakt ke layar utama",
+  'install.body': "Aplikasi akan terbuka layar penuh dengan sekali ketuk, tanpa bilah alamat, dan peringatan bekerja lebih baik.",
+  'install.button': "Tambahkan",
+  'install.later': "Nanti saja",
+  'install.ios1': "Buka halaman di Safari dan ketuk Bagikan (kotak dengan panah ke atas).",
+  'install.ios2': "Pilih \"Tambah ke Layar Utama\" lalu ketuk Tambah.",
+  'install.ios3': "Lain kali buka Bordvakt dari layar utama.",
+  'install.other': "Buka menu browser dan pilih \"Instal aplikasi\" atau \"Tambahkan ke Layar utama\".",
+  'install.done': "Bordvakt sudah ada di layar utama perangkat ini.",
+  'wake.label': "Biarkan layar tetap menyala",
+  'wake.hint': "Di Ruang makan dan Dapur pada perangkat ini. Cocok untuk tablet di dudukan, bukan ponsel di saku.",
+  'wake.unsupported': "Browser ini tidak bisa membuat layar tetap menyala. Ubah batas waktu layar di pengaturan perangkat.",
 };
 
 export default id;

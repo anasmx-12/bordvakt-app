@@ -477,6 +477,18 @@ const fr: Dict = {
   'sum.empty': "Pas encore de chiffres aujourd'hui.",
   'sum.note': "Les mêmes chiffres arrivent dans l'e-mail de 7 h. Rien n'est fermé ni remis à zéro.",
   'sum.error': "Impossible de charger les chiffres du jour.",
+  'install.title': "Ajoutez Bordvakt à l'écran d'accueil",
+  'install.body': "L'appli s'ouvre alors en plein écran d'un seul geste, sans barre d'adresse, et les alertes fonctionnent mieux.",
+  'install.button': "Ajouter",
+  'install.later': "Pas maintenant",
+  'install.ios1': "Ouvrez la page dans Safari et touchez Partager (le carré avec une flèche vers le haut).",
+  'install.ios2': "Choisissez « Sur l'écran d'accueil » puis touchez Ajouter.",
+  'install.ios3': "La prochaine fois, ouvrez Bordvakt depuis l'écran d'accueil.",
+  'install.other': "Ouvrez le menu du navigateur et choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil ».",
+  'install.done': "Bordvakt est sur l'écran d'accueil de cet appareil.",
+  'wake.label': "Garder l'écran allumé",
+  'wake.hint': "Dans Salle et Cuisine sur cet appareil. Idéal pour une tablette posée, pas pour un téléphone dans la poche.",
+  'wake.unsupported': "Ce navigateur ne peut pas garder l'écran allumé. Modifiez plutôt la mise en veille dans les réglages de l'appareil.",
 };
 
 export default fr;

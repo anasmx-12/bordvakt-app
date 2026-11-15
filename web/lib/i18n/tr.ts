@@ -477,6 +477,18 @@ const tr: Dict = {
   'sum.empty': "Bugün henüz veri yok.",
   'sum.note': "Aynı rakamlar sabah 07.00 e-postasında gelir. Hiçbir şey kapatılmaz veya sıfırlanmaz.",
   'sum.error': "Bugünün verileri yüklenemedi.",
+  'install.title': "Bordvakt'ı ana ekrana ekleyin",
+  'install.body': "Böylece uygulama tek dokunuşla tam ekran, adres çubuğu olmadan açılır ve uyarılar daha iyi çalışır.",
+  'install.button': "Ekle",
+  'install.later': "Şimdi değil",
+  'install.ios1': "Sayfayı Safari'de açın ve Paylaş'a (yukarı oklu kare) dokunun.",
+  'install.ios2': "\"Ana Ekrana Ekle\"yi seçin ve Ekle'ye dokunun.",
+  'install.ios3': "Bir dahaki sefere Bordvakt'ı ana ekrandan açın.",
+  'install.other': "Tarayıcı menüsünü açın ve \"Uygulamayı yükle\" veya \"Ana ekrana ekle\"yi seçin.",
+  'install.done': "Bordvakt bu cihazın ana ekranında.",
+  'wake.label': "Ekranı açık tut",
+  'wake.hint': "Bu cihazda Salon ve Mutfak'ta. Standdaki tabletler için iyi, cepteki telefonlar için değil.",
+  'wake.unsupported': "Bu tarayıcı ekranı açık tutamıyor. Bunun yerine cihaz ayarlarından ekran zaman aşımını değiştirin.",
 };
 
 export default tr;

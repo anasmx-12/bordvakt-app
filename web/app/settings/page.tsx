@@ -11,6 +11,8 @@ import { useStaffAlerts } from '@/lib/useStaffAlerts';
 import AppShell from '../components/AppShell';
 import Banner from '../components/Banner';
 import PushCard from '../components/PushCard';
+import InstallCard from '../components/InstallCard';
+import { useWakeSetting } from '@/lib/useDevice';
 import EngineCard from '../components/EngineCard';
 import { useFeatures } from '@/lib/useFeatures';
 import { ToggleRight } from 'lucide-react';
@@ -219,6 +221,7 @@ export default function SettingsPage() {
             </div>
           </Card>
 
+          <DeviceCard />
           {features.on('push') && <PushCard />}
           <SosAccuracyCard />
           <AccountCard />
@@ -537,6 +540,22 @@ function SubscriptionCard() {
 }
 
 // ------------------------------------------------------------ Byggstenar
+
+/** Den här enheten: hemskärmen och vaken skärm. Sparas bara på enheten. */
+function DeviceCard() {
+  const t = useT();
+  const wake = useWakeSetting();
+  return (
+    <Card title={t('install.title')}>
+      <InstallCard />
+      {wake.supported ? (
+        <Toggle label={t('wake.label')} help={t('wake.hint')} checked={wake.on} onChange={wake.set} />
+      ) : (
+        <p className="text-sm text-muted">{t('wake.unsupported')}</p>
+      )}
+    </Card>
+  );
+}
 
 function Card({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (

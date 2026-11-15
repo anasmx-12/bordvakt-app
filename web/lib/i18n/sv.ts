@@ -510,6 +510,18 @@ const sv = {
   'sum.empty': "Inga siffror än i dag.",
   'sum.note': "Samma siffror kommer i morgonmejlet kl. 07. Ingenting stängs eller nollställs.",
   'sum.error': "Kunde inte hämta dagens siffror.",
+  'install.title': "Lägg Bordvakt på hemskärmen",
+  'install.body': "Då öppnas appen i helskärm med ett tryck, utan adressfält, och larmen fungerar bättre.",
+  'install.button': "Lägg till",
+  'install.later': "Inte nu",
+  'install.ios1': "Öppna sidan i Safari och tryck på Dela (fyrkanten med en pil uppåt).",
+  'install.ios2': "Välj \"Lägg till på hemskärmen\" och tryck på Lägg till.",
+  'install.ios3': "Öppna Bordvakt från hemskärmen nästa gång.",
+  'install.other': "Öppna webbläsarens meny och välj \"Installera app\" eller \"Lägg till på startskärmen\".",
+  'install.done': "Bordvakt ligger på hemskärmen på den här enheten.",
+  'wake.label': "Håll skärmen vaken",
+  'wake.hint': "I Matsal och Kök på den här enheten. Bra för surfplattor som står framme, inte för mobiler i fickan.",
+  'wake.unsupported': "Den här webbläsaren kan inte hålla skärmen vaken. Ändra skärmens tidsgräns i enhetens inställningar i stället.",
 } as const;
 
 export type Key = keyof typeof sv;

@@ -477,6 +477,18 @@ const en: Dict = {
   'sum.empty': "No numbers yet today.",
   'sum.note': "The same numbers arrive in the morning email at 07:00. Nothing is closed or reset.",
   'sum.error': "Could not load today's numbers.",
+  'install.title': "Add Bordvakt to the home screen",
+  'install.body': "Then the app opens full screen with one tap, without the address bar, and alerts work better.",
+  'install.button': "Add",
+  'install.later': "Not now",
+  'install.ios1': "Open the page in Safari and tap Share (the square with an arrow pointing up).",
+  'install.ios2': "Choose \"Add to Home Screen\" and tap Add.",
+  'install.ios3': "Open Bordvakt from the home screen next time.",
+  'install.other': "Open the browser menu and choose \"Install app\" or \"Add to Home screen\".",
+  'install.done': "Bordvakt is on the home screen of this device.",
+  'wake.label': "Keep the screen on",
+  'wake.hint': "In the Dining room and Kitchen on this device. Good for tablets on a stand, not for phones in a pocket.",
+  'wake.unsupported': "This browser can't keep the screen on. Change the screen timeout in the device settings instead.",
 };
 
 export default en;

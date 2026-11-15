@@ -1,5 +1,6 @@
 'use client';
 
+import { useKeepAwake } from '@/lib/useDevice';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
@@ -54,6 +55,7 @@ export default function KitchenPage() {
   const { prep } = usePrepTimes();
   const { on } = useFeatures();
   const t = useT();
+  useKeepAwake(); // köksskärmen ska inte slockna mitt i passet
 
   useEffect(() => {
     supabase

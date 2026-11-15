@@ -477,6 +477,18 @@ const pt: Dict = {
   'sum.empty': "Ainda não há números hoje.",
   'sum.note': "Os mesmos números chegam no e-mail das 07:00. Nada é fechado ou reiniciado.",
   'sum.error': "Não foi possível carregar os números de hoje.",
+  'install.title': "Adicione o Bordvakt ao ecrã principal",
+  'install.body': "Assim a app abre em ecrã inteiro com um toque, sem barra de endereço, e os alertas funcionam melhor.",
+  'install.button': "Adicionar",
+  'install.later': "Agora não",
+  'install.ios1': "Abra a página no Safari e toque em Partilhar (o quadrado com uma seta para cima).",
+  'install.ios2': "Escolha \"Adicionar ao ecrã principal\" e toque em Adicionar.",
+  'install.ios3': "Da próxima vez, abra o Bordvakt a partir do ecrã principal.",
+  'install.other': "Abra o menu do navegador e escolha \"Instalar app\" ou \"Adicionar ao ecrã principal\".",
+  'install.done': "O Bordvakt está no ecrã principal deste dispositivo.",
+  'wake.label': "Manter o ecrã ligado",
+  'wake.hint': "Na Sala e na Cozinha deste dispositivo. Bom para tablets num suporte, não para telemóveis no bolso.",
+  'wake.unsupported': "Este navegador não consegue manter o ecrã ligado. Altere o tempo limite do ecrã nas definições do dispositivo.",
 };
 
 export default pt;

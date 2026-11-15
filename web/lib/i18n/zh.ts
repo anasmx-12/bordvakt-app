@@ -477,6 +477,18 @@ const zh: Dict = {
   'sum.empty': "今天还没有数据。",
   'sum.note': "相同数据会在早上 7 点的邮件中发送。不会关闭或清零任何内容。",
   'sum.error': "无法加载今天的数据。",
+  'install.title': "将 Bordvakt 添加到主屏幕",
+  'install.body': "这样一点即可全屏打开应用，没有地址栏，提醒也更可靠。",
+  'install.button': "添加",
+  'install.later': "以后再说",
+  'install.ios1': "在 Safari 中打开页面，点击“分享”（带向上箭头的方框）。",
+  'install.ios2': "选择“添加到主屏幕”，然后点击“添加”。",
+  'install.ios3': "下次从主屏幕打开 Bordvakt。",
+  'install.other': "打开浏览器菜单，选择“安装应用”或“添加到主屏幕”。",
+  'install.done': "Bordvakt 已在此设备的主屏幕上。",
+  'wake.label': "保持屏幕常亮",
+  'wake.hint': "仅限此设备上的餐厅和厨房页面。适合放在支架上的平板，不适合放在口袋里的手机。",
+  'wake.unsupported': "此浏览器无法保持屏幕常亮。请在设备设置中更改屏幕超时时间。",
 };
 
 export default zh;

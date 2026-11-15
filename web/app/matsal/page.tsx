@@ -10,6 +10,8 @@ import { useOrders } from '@/lib/useOrders';
 import DashboardView from '../components/DashboardView';
 import OfflineNotice from '../components/OfflineNotice';
 import ShiftSummary from '../components/ShiftSummary';
+import InstallCard from '../components/InstallCard';
+import { useKeepAwake } from '@/lib/useDevice';
 import { useFeatures } from '@/lib/useFeatures';
 import { useOfflineQueue } from '@/lib/useOfflineQueue';
 import { translate, useT } from '@/lib/i18n';
@@ -38,6 +40,7 @@ export default function Dashboard() {
   const alerts = useStaffAlerts();
   const queue = useOfflineQueue(isConnected);
   const features = useFeatures();
+  useKeepAwake();
 
   // Realtidslyssnaren skapas en gång, så den läser senaste borden och larmfunktionen via refs
   const tablesRef = useRef(tables);
@@ -209,7 +212,12 @@ export default function Dashboard() {
       orders={{ ...orders, orders: orders.orders.filter((o) => !queue.queued.has(`serve:${o.id}`)) }}
       alerts={alerts}
       extraActions={features.on('stats') && <ShiftSummary />}
-      notice={<OfflineNotice down={queue.down} downSince={queue.downSince} pending={queue.pending} />}
+      notice={
+        <>
+          <OfflineNotice down={queue.down} downSince={queue.downSince} pending={queue.pending} />
+          <InstallCard inline />
+        </>
+      }
     />
   );
 }

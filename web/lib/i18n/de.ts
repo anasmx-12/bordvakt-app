@@ -477,6 +477,18 @@ const de: Dict = {
   'sum.empty': "Heute noch keine Zahlen.",
   'sum.note': "Dieselben Zahlen kommen um 7 Uhr in der Morgen-E-Mail. Nichts wird geschlossen oder zurückgesetzt.",
   'sum.error': "Die Zahlen von heute konnten nicht geladen werden.",
+  'install.title': "Bordvakt zum Startbildschirm hinzufügen",
+  'install.body': "Dann öffnet sich die App mit einem Tipp im Vollbild, ohne Adressleiste, und Alarme funktionieren besser.",
+  'install.button': "Hinzufügen",
+  'install.later': "Nicht jetzt",
+  'install.ios1': "Öffne die Seite in Safari und tippe auf Teilen (das Quadrat mit dem Pfeil nach oben).",
+  'install.ios2': "Wähle „Zum Home-Bildschirm“ und tippe auf Hinzufügen.",
+  'install.ios3': "Öffne Bordvakt beim nächsten Mal vom Home-Bildschirm.",
+  'install.other': "Öffne das Browsermenü und wähle „App installieren“ oder „Zum Startbildschirm hinzufügen“.",
+  'install.done': "Bordvakt ist auf dem Startbildschirm dieses Geräts.",
+  'wake.label': "Bildschirm anlassen",
+  'wake.hint': "Im Speisesaal und in der Küche auf diesem Gerät. Gut für Tablets im Ständer, nicht für Handys in der Tasche.",
+  'wake.unsupported': "Dieser Browser kann den Bildschirm nicht anlassen. Ändere stattdessen die Bildschirmsperre in den Geräteeinstellungen.",
 };
 
 export default de;

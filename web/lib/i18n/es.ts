@@ -477,6 +477,18 @@ const es: Dict = {
   'sum.empty': "Todavía no hay cifras hoy.",
   'sum.note': "Las mismas cifras llegan en el correo de las 07:00. No se cierra ni se reinicia nada.",
   'sum.error': "No se pudieron cargar las cifras de hoy.",
+  'install.title': "Añade Bordvakt a la pantalla de inicio",
+  'install.body': "Así la app se abre a pantalla completa con un toque, sin barra de direcciones, y los avisos funcionan mejor.",
+  'install.button': "Añadir",
+  'install.later': "Ahora no",
+  'install.ios1': "Abre la página en Safari y toca Compartir (el cuadrado con una flecha hacia arriba).",
+  'install.ios2': "Elige \"Añadir a pantalla de inicio\" y toca Añadir.",
+  'install.ios3': "La próxima vez abre Bordvakt desde la pantalla de inicio.",
+  'install.other': "Abre el menú del navegador y elige \"Instalar aplicación\" o \"Añadir a pantalla de inicio\".",
+  'install.done': "Bordvakt está en la pantalla de inicio de este dispositivo.",
+  'wake.label': "Mantener la pantalla encendida",
+  'wake.hint': "En Comedor y Cocina de este dispositivo. Ideal para tabletas en un soporte, no para móviles en el bolsillo.",
+  'wake.unsupported': "Este navegador no puede mantener la pantalla encendida. Cambia el tiempo de bloqueo en los ajustes del dispositivo.",
 };
 
 export default es;

@@ -477,6 +477,18 @@ const ko: Dict = {
   'sum.empty': "오늘은 아직 데이터가 없습니다.",
   'sum.note': "같은 숫자가 오전 7시 메일로 옵니다. 아무것도 마감되거나 초기화되지 않습니다.",
   'sum.error': "오늘의 데이터를 불러오지 못했습니다.",
+  'install.title': "Bordvakt를 홈 화면에 추가",
+  'install.body': "한 번 누르면 주소창 없이 전체 화면으로 열리고 알림도 더 잘 작동합니다.",
+  'install.button': "추가",
+  'install.later': "나중에",
+  'install.ios1': "Safari에서 페이지를 열고 공유(위쪽 화살표가 있는 네모)를 누르세요.",
+  'install.ios2': "\"홈 화면에 추가\"를 선택하고 추가를 누르세요.",
+  'install.ios3': "다음부터는 홈 화면에서 Bordvakt를 여세요.",
+  'install.other': "브라우저 메뉴를 열고 \"앱 설치\" 또는 \"홈 화면에 추가\"를 선택하세요.",
+  'install.done': "Bordvakt가 이 기기의 홈 화면에 있습니다.",
+  'wake.label': "화면 켜짐 유지",
+  'wake.hint': "이 기기의 홀과 주방 화면에서 적용됩니다. 거치대의 태블릿에 좋고, 주머니 속 휴대폰에는 맞지 않습니다.",
+  'wake.unsupported': "이 브라우저는 화면을 켜 둘 수 없습니다. 대신 기기 설정에서 화면 꺼짐 시간을 바꾸세요.",
 };
 
 export default ko;
