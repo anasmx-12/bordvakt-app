@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { BellRing, CameraOff, ChefHat } from 'lucide-react';
 import { ElementKind, PlanElement } from '@/lib/floorPlan';
 import { STATUS_STYLE, TableShape, TableStatus } from '@/lib/types';

@@ -2,7 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from 'react';
 import { BellRing, Clock } from 'lucide-react';
-import { Key, LANGUAGES, translate, TFunction } from '@/lib/i18n';
+import { Key, LANGUAGES, TFunction, useTranslate } from '@/lib/i18n';
 import type { Language } from '@/lib/settings';
 
 // Gästens plats i kön (öppnas från QR-koden som värden visar). Ingen inloggning.
@@ -46,7 +46,7 @@ function buzz() {
 export default function WaitPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const [lang, setLang] = useState<Language>('en');
-  const t: TFunction = useCallback((key, vars) => translate(lang, key, vars), [lang]);
+  const t: TFunction = useTranslate(lang);
   const [spot, setSpot] = useState<Spot | null>(null);
   const [problem, setProblem] = useState<Key | null>(null);
 
@@ -92,7 +92,7 @@ export default function WaitPage({ params }: { params: Promise<{ token: string }
             localStorage.setItem(LANG_KEY, e.target.value);
           }}
           aria-label="Language"
-          className="h-9 max-w-[8rem] rounded-lg border border-line bg-white px-2 text-[13px] font-semibold text-ink"
+          className="h-10 max-w-[8rem] rounded-lg border border-line bg-white px-2 text-[14px] font-semibold text-ink"
         >
           {LANGUAGES.map((l) => (
             <option key={l.code} value={l.code}>

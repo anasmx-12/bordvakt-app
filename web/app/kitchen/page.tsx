@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { DiningTable, Order, ORDER_STYLE, OrderStatus } from '@/lib/types';
 import { useOrders } from '@/lib/useOrders';

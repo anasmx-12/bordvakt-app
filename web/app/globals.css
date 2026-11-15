@@ -158,6 +158,23 @@ a:focus-visible {
   .eyebrow {
     @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted;
   }
+
+  /* Pekskärm (mobil, platta): minst 44 px att trycka på, även med en bricka i andra handen */
+  @media (pointer: coarse) {
+    .btn {
+      min-height: 2.75rem;
+    }
+    .btn-lg {
+      min-height: 3rem;
+    }
+    .btn-sm {
+      min-height: 2.5rem;
+    }
+    .btn-icon {
+      height: 2.75rem;
+      width: 2.75rem;
+    }
+  }
 }
 
 /* Vakti, chattens maskot */

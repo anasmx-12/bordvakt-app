@@ -192,7 +192,7 @@ export default function MenuStep({ onDone }: { onDone: () => void }) {
             <select
               value={currency}
               onChange={(e) => saveSettings({ currency: e.target.value })}
-              className="h-9 rounded-lg border border-line bg-white px-2 text-sm font-semibold"
+              className="h-10 rounded-lg border border-line bg-white px-2 text-sm font-semibold"
             >
               {CURRENCIES.map((c) => (
                 <option key={c}>{c}</option>

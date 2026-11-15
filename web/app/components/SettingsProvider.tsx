@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useSyncExternalStore } from 'react';
-import { MotionConfig } from 'framer-motion';
+import { LazyMotion, MotionConfig } from 'framer-motion';
+
+// Animationerna laddas efter sidan (m i stället för motion i komponenterna): mindre att ladda först
+const motionFeatures = () => import('@/lib/motionFeatures').then((r) => r.default);
 import { RTL_LANGUAGES, useSettings } from '@/lib/settings';
 
 function subscribeDark(cb: () => void) {
@@ -29,5 +32,9 @@ export default function SettingsProvider({ children }: { children: React.ReactNo
     d.dir = RTL_LANGUAGES.includes(s.language) ? 'rtl' : 'ltr';
   }, [s, systemDark]);
 
-  return <MotionConfig reducedMotion={s.reduceMotion ? 'always' : 'user'}>{children}</MotionConfig>;
+  return (
+    <LazyMotion features={motionFeatures}>
+      <MotionConfig reducedMotion={s.reduceMotion ? 'always' : 'user'}>{children}</MotionConfig>
+    </LazyMotion>
+  );
 }

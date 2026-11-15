@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { CameraOff } from 'lucide-react';
 import { DiningTable, STATUS_STYLE, TableStatus } from '@/lib/types';
 import SectionLabel from './SectionLabel';

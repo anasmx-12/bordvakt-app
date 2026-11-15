@@ -14,7 +14,7 @@ import PushCard from '../components/PushCard';
 import EngineCard from '../components/EngineCard';
 import { useFeatures } from '@/lib/useFeatures';
 import { ToggleRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useId } from 'react';
 
 interface Billing {

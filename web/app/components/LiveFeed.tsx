@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { CameraOff, Loader2, RefreshCw } from 'lucide-react';
 import { CameraFeed, DiningTable, STATUS_STYLE } from '@/lib/types';
 import { EngineStatus, streamUrl } from '@/lib/useEngineStatus';

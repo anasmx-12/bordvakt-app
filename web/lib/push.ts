@@ -1,7 +1,7 @@
 import 'server-only';
 import webpush from 'web-push';
 import { serverSupabase } from './server';
-import { translate } from './i18n/core';
+import { loadLanguage, translate } from './i18n/core';
 import type { Key } from './i18n/sv';
 import type { Language } from './settings';
 import { isOn } from './features';
@@ -49,6 +49,7 @@ export async function sendPush(restaurantId: string, msg: PushMessage, onlyEndpo
   await Promise.all(
     subs.map(async (s) => {
       const lang = s.lang as Language;
+      await loadLanguage(lang);
       const body = JSON.stringify({
         title: translate(lang, msg.key, msg.vars),
         body: msg.detail ?? (msg.detailKey ? translate(lang, msg.detailKey, msg.vars) : ''),

@@ -7,7 +7,7 @@ import Banner from '../components/Banner';
 import SectionLabel from '../components/SectionLabel';
 import { formatPrice } from '@/lib/types';
 import { useFeatures } from '@/lib/useFeatures';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import CountUp from '../components/CountUp';
 import LearnedCard from './LearnedCard';
 

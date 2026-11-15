@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { Language, useSettings } from '../settings';
 import sv, { Key } from './sv';
-import { translate } from './core';
+import { languagesVersion, loadLanguage, subscribeLanguages, translate } from './core';
 
 export type { Key };
-export { translate };
+export { translate, loadLanguage };
 
 /** Språken i Inställningar, med namnet på språket självt. */
 export const LANGUAGES: { code: Language; name: string; english: string }[] = [
@@ -33,7 +33,17 @@ export type TFunction = (key: Key, vars?: Record<string, string | number>) => st
 /** t('nav.dining') → texten på enhetens valda språk. */
 export function useT(): TFunction {
   const { language } = useSettings();
-  return useCallback((key, vars) => translate(language, key, vars), [language]);
+  return useTranslate(language);
+}
+
+/** t() för ett visst språk. Hämtar språket och ritar om sidan när det har kommit. */
+export function useTranslate(language: Language): TFunction {
+  useEffect(() => {
+    loadLanguage(language);
+  }, [language]);
+  const version = useSyncExternalStore(subscribeLanguages, languagesVersion, () => 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- version: ny t() när språket har hämtats
+  return useCallback((key, vars) => translate(language, key, vars), [language, version]);
 }
 
 // AI-motorn sparar förklaringar på svenska i databasen. De översätts här.

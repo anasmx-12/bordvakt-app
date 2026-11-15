@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { BellRing, CameraOff, CheckCircle2, ChevronRight, PauseCircle } from 'lucide-react';
 import { DiningTable, Order, orderSummary, Task, TASK_STYLE } from '@/lib/types';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import QRCode from 'qrcode';
 import { BellRing, Check, Clock, QrCode, UserPlus, Users, X } from 'lucide-react';
 import AppShell from '../components/AppShell';

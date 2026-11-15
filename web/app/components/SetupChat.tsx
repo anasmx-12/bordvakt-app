@@ -1,14 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { ArrowUp, Check, Copy, RotateCcw, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useEngineStatus } from '@/lib/useEngineStatus';
 import { useSettings } from '@/lib/settings';
-import { Key, LANGUAGES, translate, TFunction } from '@/lib/i18n';
+import { Key, LANGUAGES, TFunction, useTranslate } from '@/lib/i18n';
 import type { Language } from '@/lib/settings';
 import Vakti, { VaktiMood } from './Vakti';
 
@@ -33,6 +34,8 @@ const QUICK: Key[] = ['chat.q.camera', 'chat.q.noImage', 'chat.q.calibrate'];
 /** Modellen skriver ibland **fetstil**: visa bara texten. */
 const plain = (text: string) => text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/^#+\s*/gm, '');
 
+const noSubscribe = () => () => {};
+
 /** Vakti: Bordvakts AI som hjälper användaren att få igång appen.
  *  Öppnar sig själv efter inloggning när installationen inte är klar.
  *  Knapparna väljs av appen utifrån installationens läge, inte av AI:n. */
@@ -42,7 +45,7 @@ export default function SetupChat() {
   const settings = useSettings();
   const [chosen, setChosen] = useState<Language | null>(null);
   const language = chosen ?? settings.language;
-  const t: TFunction = useCallback((key, vars) => translate(language, key, vars), [language]);
+  const t: TFunction = useTranslate(language);
   const engine = useEngineStatus();
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<SetupStatus | null>(null);
@@ -99,6 +102,13 @@ export default function SetupChat() {
   const hasProblem = engineOff || offline.length > 0;
   const stepsLeft = status && !status.complete ? Math.max(1, STEPS.length - STEPS.indexOf(status.step)) : 0;
 
+  const dot = hasProblem ? 'bg-red-600' : status && !status.complete ? 'bg-accent' : null;
+  // Platsen i toppfältet på mobilen. SetupChat ligger i AppShell, så platsen finns redan.
+  const slot = useSyncExternalStore(
+    noSubscribe,
+    () => document.getElementById('vakti-slot'),
+    () => null
+  );
   const mood: VaktiMood = busy ? 'thinking' : hasProblem ? 'worried' : status?.complete ? 'happy' : 'idle';
 
   // Vaktis första meddelande räknas fram av appen: det stämmer alltid
@@ -187,7 +197,24 @@ export default function SetupChat() {
 
   return (
     <>
-      {/* Bubblan i hörnet */}
+      {/* Mobil: en liten knapp i toppfältet (AppShell), bubblan i hörnet skulle täcka knapparna */}
+      {slot &&
+        createPortal(
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-label={t('chat.open')}
+            aria-expanded={open}
+            title={t('chat.open')}
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-line bg-white"
+          >
+            <Vakti mood={mood} size={32} />
+            {dot && <span className={`absolute -end-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white ${dot}`} />}
+          </button>,
+          slot
+        )}
+
+      {/* Bubblan i hörnet (dator) */}
       <AnimatePresence>
         {!open && (
           <motion.button
@@ -198,12 +225,10 @@ export default function SetupChat() {
             onClick={() => setOpen(true)}
             aria-label={t('chat.open')}
             title={t('chat.open')}
-            className="fixed bottom-24 end-4 z-50 flex h-16 w-16 items-center justify-center rounded-full border border-line bg-white shadow-[0_12px_28px_-10px_rgba(15,20,25,.45)] lg:bottom-6 lg:end-6"
+            className="fixed bottom-6 end-6 z-50 hidden h-16 w-16 items-center justify-center rounded-full border border-line bg-white shadow-[0_12px_28px_-10px_rgba(15,20,25,.45)] lg:flex"
           >
             <Vakti mood={mood} size={52} />
-            {(hasProblem || (status && !status.complete)) && (
-              <span className={`absolute end-1 top-1 h-3.5 w-3.5 rounded-full border-2 border-white ${hasProblem ? 'bg-red-600' : 'bg-accent'}`} />
-            )}
+            {dot && <span className={`absolute end-1 top-1 h-3.5 w-3.5 rounded-full border-2 border-white ${dot}`} />}
           </motion.button>
         )}
       </AnimatePresence>

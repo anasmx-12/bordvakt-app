@@ -1,10 +1,10 @@
 'use client';
 
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { ArrowLeft, Check, Clock, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { cardKey, GuestCard, GuestReview } from './Extras';
-import { Key, LANGUAGES, translate, TFunction } from '@/lib/i18n';
+import { Key, LANGUAGES, TFunction, useTranslate } from '@/lib/i18n';
 import type { Language } from '@/lib/settings';
 import { formatPrice, OrderItem, OrderStatus } from '@/lib/types';
 
@@ -75,7 +75,7 @@ function savedOrders(token: string): { id: string; at: number }[] {
 export default function GuestOrderPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const [lang, setLang] = useState<Language>('en');
-  const t: TFunction = useCallback((key, vars) => translate(lang, key, vars), [lang]);
+  const t: TFunction = useTranslate(lang);
   const [menu, setMenu] = useState<GuestMenu | null>(null);
   const [problem, setProblem] = useState<Key | null>(null);
   const [cart, setCart] = useState<Map<string, number>>(new Map());
@@ -217,7 +217,7 @@ export default function GuestOrderPage({ params }: { params: Promise<{ token: st
               localStorage.setItem(LANG_KEY, e.target.value);
             }}
             aria-label="Language"
-            className="h-9 max-w-[8rem] rounded-lg border border-line bg-white px-2 text-[13px] font-semibold"
+            className="h-10 max-w-[8rem] rounded-lg border border-line bg-white px-2 text-[14px] font-semibold"
           >
             {LANGUAGES.map((l) => (
               <option key={l.code} value={l.code}>
@@ -232,7 +232,7 @@ export default function GuestOrderPage({ params }: { params: Promise<{ token: st
               <a
                 key={s.id}
                 href={`#cat-${s.id}`}
-                className="flex-none rounded-full border border-line bg-white px-3 py-1.5 text-[13px] font-semibold text-body"
+                className="flex min-h-10 flex-none items-center rounded-full border border-line bg-white px-4 text-[14px] font-semibold text-body active:bg-paper"
               >
                 {s.name}
               </a>
@@ -426,11 +426,11 @@ export default function GuestOrderPage({ params }: { params: Promise<{ token: st
 function Stepper({ qty, name, t, onChange }: { qty: number; name: string; t: TFunction; onChange: (delta: number) => void }) {
   return (
     <div className="flex items-center gap-1 rounded-lg border border-line bg-white">
-      <button type="button" onClick={() => onChange(-1)} aria-label={t('guest.fewer', { name })} className="flex h-9 w-9 items-center justify-center">
+      <button type="button" onClick={() => onChange(-1)} aria-label={t('guest.fewer', { name })} className="flex h-11 w-11 items-center justify-center">
         <Minus className="h-4 w-4" />
       </button>
       <span key={qty} className="animate-pop w-6 text-center font-bold tabular-nums">{qty}</span>
-      <button type="button" onClick={() => onChange(1)} aria-label={t('guest.more', { name })} className="flex h-9 w-9 items-center justify-center">
+      <button type="button" onClick={() => onChange(1)} aria-label={t('guest.more', { name })} className="flex h-11 w-11 items-center justify-center">
         <Plus className="h-4 w-4" />
       </button>
     </div>

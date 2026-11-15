@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useFeatures } from '@/lib/useFeatures';
 import type { FeatureId } from '@/lib/features';
 import { BarChart3, ChefHat, DoorOpen, LayoutGrid, LogOut, Map as MapIcon, Settings2, ShieldCheck, SlidersHorizontal } from 'lucide-react';
@@ -121,10 +121,12 @@ export default function AppShell({ title, subtitle, actions, children }: Props) 
             <Logo />
           </Link>
           <span className="flex items-center gap-3 text-[12px] font-semibold text-muted">
-            <span className="flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${engineState.dot}`} />
-              <span className="hidden sm:inline">{engineState.text}</span>
+            <span className="flex items-center gap-2" title={engineState.text}>
+              <span aria-hidden className={`h-2 w-2 rounded-full ${engineState.dot}`} />
+              <span className="sr-only sm:not-sr-only">{engineState.text}</span>
             </span>
+            {/* Vakti visas här på mobilen (SetupChat), så att bubblan inte täcker knapparna */}
+            <span id="vakti-slot" className="flex" />
             <button
               type="button"
               onClick={signOut}
@@ -146,7 +148,8 @@ export default function AppShell({ title, subtitle, actions, children }: Props) 
               </h1>
               {subtitle && <p className="mt-1 max-w-[720px] text-[15px] text-body">{subtitle}</p>}
             </div>
-            {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+            {/* Sidans knappar hör till funktionen: döljs när den är avstängd */}
+            {actions && !pageOff && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
           </header>
           <motion.div
             key={pathname}
