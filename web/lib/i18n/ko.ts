@@ -457,6 +457,9 @@ const ko: Dict = {
   'guide.OCCUPIED': "손님이 앉아 있고 모두 괜찮습니다.",
   'guide.AVAILABLE': "테이블이 비어 있고 세팅되어 있습니다.",
   'guide.BLIND': "지금 카메라가 테이블을 보지 못합니다: 직접 살펴보세요.",
+  'demo.notice': "샘플 데이터로 된 데모이며 실제 매장이 아닙니다. 테이블 색이 저절로 바뀝니다. 테이블을 눌러 자세히 보세요.",
+  'demo.back': "설정으로 이동",
+  'gate.demo': "어떻게 보이는지 보기 (데모)",
 };
 
 export default ko;

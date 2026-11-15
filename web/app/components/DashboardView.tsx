@@ -33,6 +33,8 @@ import TaskQueue from './TaskQueue';
 import CountUp from './CountUp';
 
 export interface DashboardViewProps {
+  /** Rad överst, t.ex. demoläget eller tappad uppkoppling */
+  notice?: React.ReactNode;
   tables: DiningTable[];
   tasks: Task[];
   cameras: CameraFeed[];
@@ -147,6 +149,7 @@ export default function DashboardView(p: DashboardViewProps) {
       }
     >
       <AlertToasts toasts={alerts.toasts} onDismiss={alerts.dismiss} onSelectTable={p.onSelectTable} />
+      {p.notice}
 
       {p.error && (
         <div className="mb-5">

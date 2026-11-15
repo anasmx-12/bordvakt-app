@@ -490,6 +490,9 @@ const sv = {
   'guide.OCCUPIED': "Gäster sitter här och allt är lugnt.",
   'guide.AVAILABLE': "Bordet är ledigt och dukat.",
   'guide.BLIND': "Kameran ser inte bordet just nu: håll koll själv.",
+  'demo.notice': "Demo med låtsasdata, inte din restaurang. Borden byter färg av sig själva. Tryck på ett bord för att se mer.",
+  'demo.back': "Till installationen",
+  'gate.demo': "Se hur det ser ut (demo)",
 } as const;
 
 export type Key = keyof typeof sv;

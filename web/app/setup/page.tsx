@@ -15,7 +15,7 @@ import { progress, SETUP_STEPS, SetupStepId } from '@/lib/setupProgress';
 import CameraLabel from './CameraLabel';
 import { optInChosen } from '@/lib/features';
 import SupportLink from '../components/SupportLink';
-import { LifeBuoy } from 'lucide-react';
+import { LifeBuoy, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
   brandInfo,
@@ -143,9 +143,14 @@ export default function SetupWizard() {
         </>
       }
       actions={
-        <Link href="/setup/support" className="btn btn-secondary">
-          <LifeBuoy className="h-4 w-4" /> Kontakta Bordvakt support
-        </Link>
+        <>
+          <Link href="/matsal/demo" className="btn btn-ghost">
+            <Sparkles className="h-4 w-4" /> Se hur det ser ut (demo)
+          </Link>
+          <Link href="/setup/support" className="btn btn-secondary">
+            <LifeBuoy className="h-4 w-4" /> Kontakta Bordvakt support
+          </Link>
+        </>
       }
     >
         {dbError && (

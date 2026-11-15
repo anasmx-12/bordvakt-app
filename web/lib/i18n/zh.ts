@@ -457,6 +457,9 @@ const zh: Dict = {
   'guide.OCCUPIED': "有客人就座，一切正常。",
   'guide.AVAILABLE': "桌子空闲且已摆好。",
   'guide.BLIND': "摄像头目前看不到这张桌子：请自行留意。",
+  'demo.notice': "演示使用示例数据，并非你的餐厅。桌子会自动变色。点击桌子查看详情。",
+  'demo.back': "前往设置",
+  'gate.demo': "看看效果（演示）",
 };
 
 export default zh;

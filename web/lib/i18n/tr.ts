@@ -457,6 +457,9 @@ const tr: Dict = {
   'guide.OCCUPIED': "Misafirler oturuyor ve her şey yolunda.",
   'guide.AVAILABLE': "Masa boş ve hazır.",
   'guide.BLIND': "Kamera şu an masayı görmüyor: kendiniz takip edin.",
+  'demo.notice': "Örnek verilerle demo, sizin restoranınız değil. Masalar kendiliğinden renk değiştirir. Daha fazlası için bir masaya dokunun.",
+  'demo.back': "Kuruluma git",
+  'gate.demo': "Nasıl göründüğüne bakın (demo)",
 };
 
 export default tr;

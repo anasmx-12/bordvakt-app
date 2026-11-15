@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m as motion } from 'framer-motion';
-import { Settings2 } from 'lucide-react';
+import Link from 'next/link';
+import { Settings2, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/lib/i18n';
 import Vakti from './Vakti';
@@ -72,6 +73,10 @@ export default function SetupGate() {
           <Settings2 className="h-5 w-5" />
           {t('gate.go')}
         </button>
+        <Link href="/matsal/demo" className="btn btn-secondary w-full">
+          <Sparkles className="h-4 w-4" />
+          {t('gate.demo')}
+        </Link>
         <p className="text-[13px] text-muted" aria-live="polite">
           {t('gate.redirect', { n: Math.max(0, left) })}
         </p>

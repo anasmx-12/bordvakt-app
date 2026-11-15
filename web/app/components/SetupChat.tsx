@@ -41,7 +41,8 @@ const noSubscribe = () => () => {};
  *  Knapparna väljs av appen utifrån installationens läge, inte av AI:n. */
 export default function SetupChat() {
   const pathname = usePathname();
-  const gated = pathname === '/matsal' || pathname === '/kitchen';
+  // Spärrade sidor och demon: öppna inte chatten av sig själv ovanpå sidan
+  const gated = pathname === '/matsal' || pathname === '/kitchen' || pathname === '/matsal/demo';
   const settings = useSettings();
   const [chosen, setChosen] = useState<Language | null>(null);
   const language = chosen ?? settings.language;

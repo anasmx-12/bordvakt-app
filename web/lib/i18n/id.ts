@@ -457,6 +457,9 @@ const id: Dict = {
   'guide.OCCUPIED': "Tamu sudah duduk dan semuanya baik.",
   'guide.AVAILABLE': "Meja kosong dan sudah ditata.",
   'guide.BLIND': "Kamera tidak melihat meja saat ini: awasi sendiri.",
+  'demo.notice': "Demo dengan data contoh, bukan restoran Anda. Meja berganti warna sendiri. Ketuk meja untuk melihat lebih banyak.",
+  'demo.back': "Ke pengaturan",
+  'gate.demo': "Lihat tampilannya (demo)",
 };
 
 export default id;

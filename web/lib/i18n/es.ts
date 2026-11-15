@@ -457,6 +457,9 @@ const es: Dict = {
   'guide.OCCUPIED': "Hay clientes sentados y todo va bien.",
   'guide.AVAILABLE': "La mesa está libre y puesta.",
   'guide.BLIND': "La cámara no ve la mesa ahora: vigílala tú.",
+  'demo.notice': "Demo con datos de ejemplo, no es tu restaurante. Las mesas cambian de color solas. Toca una mesa para ver más.",
+  'demo.back': "Ir a la configuración",
+  'gate.demo': "Ver cómo se ve (demo)",
 };
 
 export default es;
