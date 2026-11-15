@@ -463,6 +463,20 @@ const pt: Dict = {
   'offline.banner': "Sem ligação. A mostrar a situação das {time}.",
   'offline.queued': "{n} ações serão enviadas quando a ligação voltar.",
   'offline.sending': "A ligação voltou. A enviar {n} ações…",
+  'sum.open': "Terminar turno",
+  'sum.title': "Como correu o dia",
+  'sum.guests': "Clientes",
+  'sum.orders': "Pedidos",
+  'sum.revenue': "Valor pedido",
+  'sum.foodWait': "Espera pela comida",
+  'sum.response': "Tempo de resposta",
+  'sum.sos': "SOS",
+  'sum.rating': "Avaliação dos clientes",
+  'sum.top': "Mais pedidos",
+  'sum.min': "{n} min",
+  'sum.empty': "Ainda não há números hoje.",
+  'sum.note': "Os mesmos números chegam no e-mail das 07:00. Nada é fechado ou reiniciado.",
+  'sum.error': "Não foi possível carregar os números de hoje.",
 };
 
 export default pt;

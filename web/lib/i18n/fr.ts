@@ -463,6 +463,20 @@ const fr: Dict = {
   'offline.banner': "Pas de connexion. Affichage de la situation à {time}.",
   'offline.queued': "{n} actions seront envoyées au retour de la connexion.",
   'offline.sending': "La connexion est revenue. Envoi de {n} actions…",
+  'sum.open': "Terminer le service",
+  'sum.title': "Bilan de la journée",
+  'sum.guests': "Clients",
+  'sum.orders': "Commandes",
+  'sum.revenue': "Montant commandé",
+  'sum.foodWait': "Attente des plats",
+  'sum.response': "Temps de réponse",
+  'sum.sos': "SOS",
+  'sum.rating': "Note des clients",
+  'sum.top': "Les plus commandés",
+  'sum.min': "{n} min",
+  'sum.empty': "Pas encore de chiffres aujourd'hui.",
+  'sum.note': "Les mêmes chiffres arrivent dans l'e-mail de 7 h. Rien n'est fermé ni remis à zéro.",
+  'sum.error': "Impossible de charger les chiffres du jour.",
 };
 
 export default fr;

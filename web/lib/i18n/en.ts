@@ -463,6 +463,20 @@ const en: Dict = {
   'offline.banner': "No connection. Showing the situation from {time}.",
   'offline.queued': "{n} taps will be sent when the connection is back.",
   'offline.sending': "Connection is back. Sending {n} taps…",
+  'sum.open': "End shift",
+  'sum.title': "How today went",
+  'sum.guests': "Guests",
+  'sum.orders': "Orders",
+  'sum.revenue': "Ordered for",
+  'sum.foodWait': "Wait for food",
+  'sum.response': "Staff response time",
+  'sum.sos': "SOS",
+  'sum.rating': "Guest rating",
+  'sum.top': "Most ordered",
+  'sum.min': "{n} min",
+  'sum.empty': "No numbers yet today.",
+  'sum.note': "The same numbers arrive in the morning email at 07:00. Nothing is closed or reset.",
+  'sum.error': "Could not load today's numbers.",
 };
 
 export default en;

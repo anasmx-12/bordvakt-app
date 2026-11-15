@@ -463,6 +463,20 @@ const es: Dict = {
   'offline.banner': "Sin conexión. Mostrando la situación de las {time}.",
   'offline.queued': "{n} acciones se enviarán cuando vuelva la conexión.",
   'offline.sending': "La conexión ha vuelto. Enviando {n} acciones…",
+  'sum.open': "Cerrar turno",
+  'sum.title': "Así fue el día",
+  'sum.guests': "Clientes",
+  'sum.orders': "Pedidos",
+  'sum.revenue': "Pedido por",
+  'sum.foodWait': "Espera de la comida",
+  'sum.response': "Tiempo de respuesta",
+  'sum.sos': "SOS",
+  'sum.rating': "Valoración de clientes",
+  'sum.top': "Lo más pedido",
+  'sum.min': "{n} min",
+  'sum.empty': "Todavía no hay cifras hoy.",
+  'sum.note': "Las mismas cifras llegan en el correo de las 07:00. No se cierra ni se reinicia nada.",
+  'sum.error': "No se pudieron cargar las cifras de hoy.",
 };
 
 export default es;

@@ -463,6 +463,20 @@ const ko: Dict = {
   'offline.banner': "연결이 없습니다. {time} 기준 상황을 표시합니다.",
   'offline.queued': "연결이 돌아오면 {n}개의 작업이 전송됩니다.",
   'offline.sending': "연결이 돌아왔습니다. {n}개의 작업을 전송 중…",
+  'sum.open': "근무 종료",
+  'sum.title': "오늘의 요약",
+  'sum.guests': "손님",
+  'sum.orders': "주문",
+  'sum.revenue': "주문 금액",
+  'sum.foodWait': "음식 대기",
+  'sum.response': "직원 응답 시간",
+  'sum.sos': "SOS",
+  'sum.rating': "손님 평점",
+  'sum.top': "가장 많이 주문됨",
+  'sum.min': "{n}분",
+  'sum.empty': "오늘은 아직 데이터가 없습니다.",
+  'sum.note': "같은 숫자가 오전 7시 메일로 옵니다. 아무것도 마감되거나 초기화되지 않습니다.",
+  'sum.error': "오늘의 데이터를 불러오지 못했습니다.",
 };
 
 export default ko;

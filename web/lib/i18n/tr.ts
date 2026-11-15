@@ -463,6 +463,20 @@ const tr: Dict = {
   'offline.banner': "Bağlantı yok. {time} itibarıyla durum gösteriliyor.",
   'offline.queued': "{n} işlem bağlantı gelince gönderilecek.",
   'offline.sending': "Bağlantı geri geldi. {n} işlem gönderiliyor…",
+  'sum.open': "Vardiyayı bitir",
+  'sum.title': "Gün nasıl geçti",
+  'sum.guests': "Misafir",
+  'sum.orders': "Sipariş",
+  'sum.revenue': "Sipariş tutarı",
+  'sum.foodWait': "Yemek bekleme",
+  'sum.response': "Personel yanıt süresi",
+  'sum.sos': "SOS",
+  'sum.rating': "Misafir puanı",
+  'sum.top': "En çok sipariş edilen",
+  'sum.min': "{n} dk",
+  'sum.empty': "Bugün henüz veri yok.",
+  'sum.note': "Aynı rakamlar sabah 07.00 e-postasında gelir. Hiçbir şey kapatılmaz veya sıfırlanmaz.",
+  'sum.error': "Bugünün verileri yüklenemedi.",
 };
 
 export default tr;

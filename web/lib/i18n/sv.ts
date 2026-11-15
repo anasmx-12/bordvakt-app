@@ -496,6 +496,20 @@ const sv = {
   'offline.banner': "Ingen uppkoppling. Visar läget från {time}.",
   'offline.queued': "{n} tryck skickas när nätet är tillbaka.",
   'offline.sending': "Uppkopplingen är tillbaka. Skickar {n} tryck…",
+  'sum.open': "Avsluta passet",
+  'sum.title': "Så gick dagen",
+  'sum.guests': "Gäster",
+  'sum.orders': "Beställningar",
+  'sum.revenue': "Beställt för",
+  'sum.foodWait': "Väntan på maten",
+  'sum.response': "Personalens svarstid",
+  'sum.sos': "SOS",
+  'sum.rating': "Betyg från gästerna",
+  'sum.top': "Mest beställt",
+  'sum.min': "{n} min",
+  'sum.empty': "Inga siffror än i dag.",
+  'sum.note': "Samma siffror kommer i morgonmejlet kl. 07. Ingenting stängs eller nollställs.",
+  'sum.error': "Kunde inte hämta dagens siffror.",
 } as const;
 
 export type Key = keyof typeof sv;

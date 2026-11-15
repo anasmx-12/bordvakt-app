@@ -463,6 +463,20 @@ const id: Dict = {
   'offline.banner': "Tidak ada koneksi. Menampilkan keadaan pukul {time}.",
   'offline.queued': "{n} ketukan akan dikirim saat koneksi kembali.",
   'offline.sending': "Koneksi kembali. Mengirim {n} ketukan…",
+  'sum.open': "Akhiri shift",
+  'sum.title': "Ringkasan hari ini",
+  'sum.guests': "Tamu",
+  'sum.orders': "Pesanan",
+  'sum.revenue': "Total pesanan",
+  'sum.foodWait': "Waktu tunggu makanan",
+  'sum.response': "Waktu respons staf",
+  'sum.sos': "SOS",
+  'sum.rating': "Penilaian tamu",
+  'sum.top': "Paling banyak dipesan",
+  'sum.min': "{n} mnt",
+  'sum.empty': "Belum ada angka hari ini.",
+  'sum.note': "Angka yang sama dikirim lewat email pagi pukul 07.00. Tidak ada yang ditutup atau direset.",
+  'sum.error': "Tidak dapat memuat angka hari ini.",
 };
 
 export default id;

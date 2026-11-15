@@ -35,6 +35,8 @@ import CountUp from './CountUp';
 export interface DashboardViewProps {
   /** Rad överst, t.ex. demoläget eller tappad uppkoppling */
   notice?: React.ReactNode;
+  /** Fler knappar i sidhuvudet, t.ex. "Avsluta passet" */
+  extraActions?: React.ReactNode;
   tables: DiningTable[];
   tasks: Task[];
   cameras: CameraFeed[];
@@ -103,6 +105,7 @@ export default function DashboardView(p: DashboardViewProps) {
       subtitle={subtitle}
       actions={
         <>
+          {p.extraActions}
           <span
             className={`inline-flex h-10 items-center gap-2 rounded-lg px-3 text-[13px] font-semibold ${
               p.isConnected ? 'bg-teal-light text-[#0F5C55]' : 'bg-[#FDF1EA] text-accent-dark'

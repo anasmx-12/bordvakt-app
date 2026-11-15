@@ -463,6 +463,20 @@ const de: Dict = {
   'offline.banner': "Keine Verbindung. Angezeigt wird der Stand von {time}.",
   'offline.queued': "{n} Eingaben werden gesendet, sobald die Verbindung zurück ist.",
   'offline.sending': "Die Verbindung ist zurück. {n} Eingaben werden gesendet…",
+  'sum.open': "Schicht beenden",
+  'sum.title': "So lief der Tag",
+  'sum.guests': "Gäste",
+  'sum.orders': "Bestellungen",
+  'sum.revenue': "Bestellt für",
+  'sum.foodWait': "Wartezeit aufs Essen",
+  'sum.response': "Reaktionszeit",
+  'sum.sos': "SOS",
+  'sum.rating': "Bewertung der Gäste",
+  'sum.top': "Am häufigsten bestellt",
+  'sum.min': "{n} Min.",
+  'sum.empty': "Heute noch keine Zahlen.",
+  'sum.note': "Dieselben Zahlen kommen um 7 Uhr in der Morgen-E-Mail. Nichts wird geschlossen oder zurückgesetzt.",
+  'sum.error': "Die Zahlen von heute konnten nicht geladen werden.",
 };
 
 export default de;

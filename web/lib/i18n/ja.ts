@@ -463,6 +463,20 @@ const ja: Dict = {
   'offline.banner': "接続がありません。{time} 時点の状況を表示しています。",
   'offline.queued': "{n} 件の操作は接続が戻ると送信されます。",
   'offline.sending': "接続が戻りました。{n} 件の操作を送信中…",
+  'sum.open': "シフトを終える",
+  'sum.title': "今日のまとめ",
+  'sum.guests': "お客様",
+  'sum.orders': "注文",
+  'sum.revenue': "注文金額",
+  'sum.foodWait': "料理の待ち時間",
+  'sum.response': "スタッフの対応時間",
+  'sum.sos': "SOS",
+  'sum.rating': "お客様の評価",
+  'sum.top': "人気の注文",
+  'sum.min': "{n} 分",
+  'sum.empty': "今日はまだデータがありません。",
+  'sum.note': "同じ数字が朝7時のメールで届きます。何も締めたりリセットしたりしません。",
+  'sum.error': "今日のデータを読み込めませんでした。",
 };
 
 export default ja;

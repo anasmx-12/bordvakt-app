@@ -463,6 +463,20 @@ const zh: Dict = {
   'offline.banner': "无网络连接。显示的是 {time} 的情况。",
   'offline.queued': "{n} 个操作将在网络恢复后发送。",
   'offline.sending': "网络已恢复。正在发送 {n} 个操作…",
+  'sum.open': "结束班次",
+  'sum.title': "今日概况",
+  'sum.guests': "客人",
+  'sum.orders': "订单",
+  'sum.revenue': "订单金额",
+  'sum.foodWait': "等餐时间",
+  'sum.response': "员工响应时间",
+  'sum.sos': "SOS",
+  'sum.rating': "客人评分",
+  'sum.top': "最受欢迎",
+  'sum.min': "{n} 分钟",
+  'sum.empty': "今天还没有数据。",
+  'sum.note': "相同数据会在早上 7 点的邮件中发送。不会关闭或清零任何内容。",
+  'sum.error': "无法加载今天的数据。",
 };
 
 export default zh;
