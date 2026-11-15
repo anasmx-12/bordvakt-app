@@ -458,7 +458,7 @@ def _channels(ip: str, brand: str, user: str, password: str, grab, start: int = 
 
 
 def connect(ip: str, user: str, password: str, brand: str | None = None, onvif_url: str | None = None,
-            grab=None, onvif=None) -> dict:
+            grab=None, onvif=None, reachable=None) -> dict:
     """Hittar kamerans videoadress(er). Lösenordet står bara i stream_url, aldrig i fel."""
     if not is_private_ip(ip):
         return _fail("unreachable")
@@ -503,7 +503,13 @@ def connect(ip: str, user: str, password: str, brand: str | None = None, onvif_u
                 first = {"channel": 1, "stream_url": rtsp_url(ip, candidate, user, password, 1)}
                 more = [] if candidate in SINGLE_CHANNEL else _channels(ip, candidate, user, password, grab, start=2)[0]
                 return {"ok": True, "brand": candidate, "model": model, "channels": [first, *more]}
-    return _fail("auth" if auth_failed else "no_stream")
+    if auth_failed:
+        return _fail("auth")
+    reachable = reachable or _open
+    if not any(reachable(ip, port) for port in (RTSP_PORT.get(brand or "", 554), 80)):
+        return {"ok": False, "reason": "unreachable",
+                "error": f"Ingen kamera svarar på {ip}. Kontrollera att kameran är på och kopplad till samma nät som AI-datorn."}
+    return _fail("no_stream")
 
 
 # ------------------------------------------------------------- Placeringskollen

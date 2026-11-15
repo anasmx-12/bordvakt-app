@@ -244,12 +244,18 @@ class ConnectTest(unittest.TestCase):
         r = cd.connect("192.168.1.70", "admin", "pw", grab=lambda u: "ok" if "realmonitor?channel=1&" in u else None)
         self.assertEqual(r["brand"], "dahua")
 
+    def test_nothing_answers(self):
+        r = cd.connect("192.168.1.99", "admin", "pw", brand="hikvision", grab=lambda u: None, reachable=lambda ip, port: False)
+        self.assertEqual(r["reason"], "unreachable")
+        self.assertIn("192.168.1.99", r["error"])
+
     def test_no_video(self):
-        self.assertEqual(cd.connect("192.168.1.64", "admin", "pw", brand="axis", grab=lambda u: None)["reason"], "no_stream")
+        r = cd.connect("192.168.1.64", "admin", "pw", brand="axis", grab=lambda u: None, reachable=lambda ip, port: True)
+        self.assertEqual(r["reason"], "no_stream")
 
     def test_password_never_in_error(self):
         for grab in (lambda u: None, lambda u: "auth"):
-            r = cd.connect("192.168.1.64", "admin", "hemligt", brand="axis", grab=grab)
+            r = cd.connect("192.168.1.64", "admin", "hemligt", brand="axis", grab=grab, reachable=lambda ip, port: True)
             self.assertNotIn("hemligt", r["error"])
 
     def test_onvif_first(self):

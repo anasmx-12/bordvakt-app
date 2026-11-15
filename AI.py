@@ -41,6 +41,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 import local_ai  # noqa: E402 (läser inställningar från .env, så den laddas efter)
 import local_chat  # noqa: E402
 import local_menu  # noqa: E402
+import camera_discovery  # noqa: E402
 import engine_security as sec  # noqa: E402
 import engine_tunnel  # noqa: E402
 
@@ -108,6 +109,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY or SUPABASE_
 RESTAURANT_ID = ENGINE_CODE["r"] if ENGINE_CODE else read_env("RESTAURANT_ID")
 local_model: local_ai.LocalTableAI | None = None  # skapas i main()
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+CAMERA_GUIDE_PATHS = {"/discover-cameras", "/read-camera-label", "/connect-camera", "/camera-placement"}
 # Flera foton av matsalen (väggar och hörn) skickas tillsammans
 MAX_MULTI_UPLOAD_BYTES = 40 * 1024 * 1024
 # En kamera räknas som frånkopplad om ingen bild kommit på så här många sekunder
@@ -324,6 +326,9 @@ class StreamHandler(BaseHTTPRequestHandler):
         if path == "/analyze-menu":
             self.analyze_menu()
             return
+        if path in CAMERA_GUIDE_PATHS:
+            self.camera_guide(path)  # placeringskollen använder kamera-AI:n om den har startat
+            return
         if path == "/support-summary":
             try:
                 body = json.loads(self.read_body(50_000) or b"{}")
@@ -383,6 +388,49 @@ class StreamHandler(BaseHTTPRequestHandler):
         except Exception as e:
             print(f"/analyze-menu misslyckades: {e}")
             self.send_json(500, {"error": "Något gick fel när menyn lästes."})
+
+    def camera_guide(self, path: str):
+        """Kameraguiden: hitta, koppla och placera kameror. Kroppen innehåller lösenord: den skrivs aldrig ut."""
+        try:
+            data = self.read_body(MAX_UPLOAD_BYTES if path == "/read-camera-label" else 10_000) or b"{}"
+            body = json.loads(data)
+            if path == "/discover-cameras":
+                self.send_json(200, {"cameras": camera_discovery.discover()})
+            elif path == "/read-camera-label":
+                photo = base64.b64decode(str(body.get("photo", "")))
+                if not photo:
+                    self.send_json(400, {"error": "Fotot saknas."})
+                    return
+                text = local_menu.read_text(photo)
+                brand, model = camera_discovery.brand_from_text(text)
+                self.send_json(200, {"text": text[:2000], "brand": brand, "model": model})
+            elif path == "/connect-camera":
+                result = camera_discovery.connect(
+                    str(body.get("ip", "")).strip(), str(body.get("username", "")), str(body.get("password", "")),
+                    brand=body.get("brand") or None, onvif_url=body.get("onvif_url") or None)
+                if not result["ok"]:
+                    self.send_json(422, result)
+                    return
+                for channel in result["channels"]:
+                    frame = grab_frame(channel["stream_url"])
+                    channel.update(camera_preview(frame) if frame is not None else {"preview": None, "warning": None})
+                    channel["placement"] = camera_placement(frame) if frame is not None else None
+                self.send_json(200, result)
+            elif path == "/camera-placement":
+                url = str(body.get("stream_url", "")).strip()
+                if not camera_discovery.is_private_ip(urlsplit(url).hostname or ""):
+                    self.send_json(422, {"error": "Adressen måste vara en kamera i restaurangens nät."})
+                    return
+                frame = grab_frame(url)
+                if frame is None:
+                    self.send_json(422, {"error": "Kunde inte hämta en bild från kameran just nu."})
+                    return
+                self.send_json(200, {**camera_preview(frame), "placement": camera_placement(frame)})
+        except local_menu.MenuReadError as e:
+            self.send_json(422, {"error": str(e)})
+        except Exception as e:
+            print(f"{path} misslyckades: {type(e).__name__}")  # aldrig själva felet: det kan innehålla adressen med lösenord
+            self.send_json(500, {"error": "Något gick fel i AI-motorn."})
 
     def chat(self):
         """Vakti: svaret skickas i bitar medan modellen skriver."""
@@ -695,41 +743,59 @@ def load_config():
 
 # ------------------------------------------------------------- Installation
 
+def grab_frame(url: str) -> np.ndarray | None:
+    """En bild från kameran (från den som redan körs om den finns), eller None."""
+    running = next((c for c in cameras.values() if c.url == url and c.is_live()), None)
+    if running is not None:
+        return running.latest_frame()
+    frame = None
+    source = int(url) if url.isdigit() else url
+    params = [] if url.isdigit() else [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 8000, cv2.CAP_PROP_READ_TIMEOUT_MSEC, 8000]
+    cap = cv2.VideoCapture(source, cv2.CAP_ANY, params)
+    try:
+        if cap.isOpened():
+            for _ in range(5):  # första bilderna kan vara tomma
+                ok, frame = cap.read()
+                if ok and frame is not None:
+                    break
+    finally:
+        cap.release()
+    return frame
+
+
+def camera_preview(frame: np.ndarray) -> dict:
+    """Förhandsbild (480 px bred) och varning om bilden är mörk eller suddig."""
+    h, w = frame.shape[:2]
+    preview = cv2.resize(frame, (480, max(1, h * 480 // w)), interpolation=cv2.INTER_AREA)
+    ok, jpg = cv2.imencode(".jpg", preview, [cv2.IMWRITE_JPEG_QUALITY, 75])
+    return {
+        "width": w,
+        "height": h,
+        "warning": local_ai.frame_problem(frame),
+        "preview": "data:image/jpeg;base64," + base64.b64encode(jpg.tobytes()).decode() if ok else None,
+    }
+
+
+def camera_placement(frame: np.ndarray) -> dict | None:
+    """Kameraguidens placeringskoll: hur många bord kameran ser jämfört med planritningen."""
+    if local_model is None:
+        return None
+    res = supabase.table("tables").select("id", count="exact").eq("restaurant_id", RESTAURANT_ID).execute()
+    plan_tables = res.count or 0
+    detections = local_model.detector(frame)
+    return camera_discovery.placement(detections, frame.shape, local_ai.frame_problem(frame), plan_tables)
+
+
 def test_camera(url: str) -> dict:
     """Försöker öppna en kamera innan den sparas. Returnerar en förhandsbild."""
     if not url:
         return {"ok": False, "error": "Ange kamerans adress."}
     if not (url.isdigit() or url.lower().startswith(("rtsp://", "rtsps://", "http://", "https://"))):
         return {"ok": False, "error": "Adressen ska börja med rtsp:// (eller vara ett nummer för webbkamera)."}
-    frame = None
-    running = next((c for c in cameras.values() if c.url == url and c.is_live()), None)
-    if running is not None:
-        frame = running.latest_frame()
-    else:
-        source = int(url) if url.isdigit() else url
-        params = [] if url.isdigit() else [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 8000, cv2.CAP_PROP_READ_TIMEOUT_MSEC, 8000]
-        cap = cv2.VideoCapture(source, cv2.CAP_ANY, params)
-        try:
-            if cap.isOpened():
-                for _ in range(5):  # första bilderna kan vara tomma
-                    ok, frame = cap.read()
-                    if ok and frame is not None:
-                        break
-        finally:
-            cap.release()
+    frame = grab_frame(url)
     if frame is None:
         return {"ok": False, "error": "Kunde inte ansluta. Kontrollera IP-adress, användarnamn, lösenord och att kameran är på."}
-    h, w = frame.shape[:2]
-    preview = cv2.resize(frame, (480, max(1, h * 480 // w)), interpolation=cv2.INTER_AREA)
-    ok, jpg = cv2.imencode(".jpg", preview, [cv2.IMWRITE_JPEG_QUALITY, 75])
-    problem = local_ai.frame_problem(frame)
-    return {
-        "ok": True,
-        "width": w,
-        "height": h,
-        "warning": problem,
-        "preview": "data:image/jpeg;base64," + base64.b64encode(jpg.tobytes()).decode() if ok else None,
-    }
+    return {"ok": True, **camera_preview(frame)}
 
 
 def calibrate_table(table_id: str) -> tuple[bool, dict]:
