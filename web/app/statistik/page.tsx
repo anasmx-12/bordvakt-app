@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/types';
 import { useFeatures } from '@/lib/useFeatures';
 import { motion } from 'framer-motion';
 import CountUp from '../components/CountUp';
+import LearnedCard from './LearnedCard';
 
 // Statistik för ägaren: gäster, sittningar, väntetider, försäljning, betyg, svinn och bemanning.
 
@@ -327,6 +328,8 @@ export default function StatistikPage() {
             </section>
           </>
         )}
+
+        <LearnedCard />
 
         {settings && (
           <section className="card scroll-reveal flex flex-col gap-4 p-5">

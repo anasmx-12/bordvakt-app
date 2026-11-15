@@ -116,6 +116,8 @@ BILL_EARLY_MIN = 2.0  # tidigast så här många minuter efter avplockning om g�
 
 # Lägsta säkerhet per sorts föremål. Personer kräver mer (färre falsklarm),
 # glas och tallrikar är små och syns sämre, så där räcker mindre.
+LOW_LIGHT_MEAN = 70      # mörkare bordsruta än så (0–255) ljusas upp innan AI:n tittar
+LOW_LIGHT_TARGET = 0.45  # ljusas upp till ungefär så här ljus (andel av fullt)
 MIN_SCORE_PERSON = 0.45
 MIN_SCORE_TABLEWARE = 0.28
 
@@ -374,6 +376,25 @@ def learn_prep_times(rows: list[dict]) -> dict[str, float]:
             if name:
                 times.setdefault(name, []).append(minutes)
     return {name: median(list_) for name, list_ in times.items() if len(list_) >= PREP_MIN_SAMPLES}
+
+
+def learned_summary(prep: dict[str, float], bill_delay: float | None, low_dessert: tuple[set[str], set[int]],
+                    careful: set[str], strict: dict[str, set[str]], rush: bool) -> dict:
+    """Det AI:n har lärt sig om restaurangen, för ägaren (Statistik → Det här har AI:n lärt sig).
+    Borden anges med id: webbappen byter till bordsnummer."""
+    low_tables, low_hours = low_dessert
+    return {
+        "prep": sorted(({"dish": d, "minutes": round(m, 1)} for d, m in prep.items()), key=lambda r: -r["minutes"]),
+        "bill_delay_min": round(bill_delay, 1) if bill_delay is not None else None,
+        "bill_default_min": BILL_DELAY_MIN,
+        "bill_min_sittings": BILL_MIN_SAMPLES,
+        "dessert_off_tables": sorted(low_tables),
+        "dessert_off_hours": sorted(h * 2 for h in low_hours),  # timmen då tvåtimmarsblocket börjar
+        "careful_tables": sorted(careful),
+        "strict_tables": {tid: sorted(triggers) for tid, triggers in sorted(strict.items()) if triggers},
+        "rush": rush,
+        "low_light_mean": LOW_LIGHT_MEAN,
+    }
 
 
 def food_deadline(waiting: list[tuple[float, list]], prep: dict[str, float]) -> float | None:
@@ -911,6 +932,21 @@ def _prep_gray(crop: np.ndarray, size: tuple[int, int] | None = None) -> np.ndar
     return cv2.createCLAHE(clipLimit=2.0, tileGridSize=(4, 4)).apply(gray)
 
 
+def brighten(img: np.ndarray) -> np.ndarray:
+    """Dåligt ljus (kvällsbelysning, levande ljus): ljusa upp bilden innan AI:n letar efter gäster,
+    glas och tallrikar. Lätt brusreducering först, annars förstärks kamerans brus. Bilder med
+    normalt ljus lämnas orörda. Används bara för analysen, inte för kalibreringen eller videon."""
+    if img.size == 0:
+        return img
+    gray = img if img.ndim == 2 else cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    mean = float(cv2.resize(gray, (64, 64), interpolation=cv2.INTER_AREA).mean())
+    if mean >= LOW_LIGHT_MEAN:
+        return img
+    gamma = np.log(LOW_LIGHT_TARGET) / np.log(max(mean, 3.0) / 255)
+    lut = np.clip(((np.arange(256) / 255) ** gamma) * 255, 0, 255).astype(np.uint8)
+    return cv2.LUT(cv2.GaussianBlur(img, (3, 3), 0), lut)
+
+
 def frame_problem(frame: np.ndarray) -> str | None:
     """Fel på hela bilden: svart/övertäckt eller suddig."""
     small = cv2.cvtColor(cv2.resize(frame, (320, 180), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2GRAY)
@@ -1158,7 +1194,7 @@ class LocalTableAI:
         if crop.size == 0:
             return Observation(0, 0, 0, False), []
         crop_area = crop.shape[0] * crop.shape[1]
-        detections = self.detector(crop, score_thr=MIN_SCORE_TABLEWARE)
+        detections = self.detector(brighten(crop), score_thr=MIN_SCORE_TABLEWARE)
         people = [d.box for d in detections
                   if d.cls == PERSON and d.score >= MIN_SCORE_PERSON and _area(d.box) > 0.02 * crop_area]
         bags = sum(1 for d in detections if d.cls in BAGS and d.score >= 0.35)
@@ -1190,7 +1226,7 @@ class LocalTableAI:
         x1 = min(b[0] for b in boxes.values()); y1 = min(b[1] for b in boxes.values())
         x2 = max(b[2] for b in boxes.values()); y2 = max(b[3] for b in boxes.values())
         result = {table_id: (0, False, False) for table_id in boxes}
-        for kp in self.pose(frame[y1:y2, x1:x2]):
+        for kp in self.pose(brighten(frame[y1:y2, x1:x2])):
             center = person_center(kp)
             if center is None:
                 continue

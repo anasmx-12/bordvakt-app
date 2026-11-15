@@ -198,5 +198,26 @@ class RushTest(TableTest):
         self.assertFalse(ai.memory["a"].rush)
 
 
+# ------------------------------------------------------------ Det AI:n har lärt sig (för ägaren)
+
+class SummaryTest(unittest.TestCase):
+    def test_summary_for_the_owner(self):
+        out = local_ai.learned_summary(
+            prep={"pizza": 12.04, "lasagne": 21.5}, bill_delay=11.0, low_dessert=({"t2", "t1"}, {6, 9}),
+            careful={"t3"}, strict={"t4": {"bend", "floor"}, "t5": set()}, rush=True)
+        self.assertEqual(out["prep"], [{"dish": "lasagne", "minutes": 21.5}, {"dish": "pizza", "minutes": 12.0}])
+        self.assertEqual(out["bill_delay_min"], 11.0)
+        self.assertEqual(out["dessert_off_tables"], ["t1", "t2"])
+        self.assertEqual(out["dessert_off_hours"], [12, 18])
+        self.assertEqual(out["careful_tables"], ["t3"])
+        self.assertEqual(out["strict_tables"], {"t4": ["bend", "floor"]})
+        self.assertTrue(out["rush"])
+
+    def test_nothing_learned_yet(self):
+        out = local_ai.learned_summary({}, None, (set(), set()), set(), {}, False)
+        self.assertEqual((out["prep"], out["bill_delay_min"], out["careful_tables"]), ([], None, []))
+        self.assertEqual(out["bill_default_min"], local_ai.BILL_DELAY_MIN)
+
+
 if __name__ == "__main__":
     unittest.main()

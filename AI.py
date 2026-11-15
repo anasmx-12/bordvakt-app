@@ -422,6 +422,10 @@ class StreamHandler(BaseHTTPRequestHandler):
         if path == "/status":
             self.send_status()
             return
+        if path == "/learned":
+            ctx = current_context
+            self.send_json(200, ctx.summary() if ctx else {"loaded": False})
+            return
         parts = path.strip("/").split("/")
         if len(parts) != 2 or parts[0] != "stream" or parts[1] not in cameras:
             self.send_json(404, {"error": "Okänd kamera"})
@@ -833,6 +837,15 @@ class Context:
         self.careful: set[str] = set()  # bord där handuppräckning ofta larmat fel
         self.bill_delay: float | None = None  # inlärda minuter från avplockning till notan
         self.low_dessert: tuple[set[str], set[int]] = (set(), set())
+        self.strict: dict[str, set[str]] = {}  # tecken som gett SOS-falsklarm, per bord
+        self.loaded = False  # har allt lästs in minst en gång?
+
+    def summary(self) -> dict:
+        """Det AI:n har lärt sig (GET /learned)."""
+        # Läses från webbserverns tråd medan analysen körs: kopiera först
+        rush = any(m.rush for m in list(local_model.memory.values())) if local_model else False
+        return {"loaded": self.loaded, **local_ai.learned_summary(
+            self.prep, self.bill_delay, self.low_dessert, self.careful, self.strict, rush)}
 
     def sync(self):
         # Beställningar de senaste 6 timmarna
@@ -965,6 +978,7 @@ class Context:
             print(f"Dessertläge: av vid {len(low_tables)} bord{f' och kl. {hours}' if hours else ''} (gästerna beställer sällan dessert där).")
         self.low_dessert = (low_tables, low_hours)
         local_model.set_dessert(low_tables, low_hours)
+        self.loaded = True
 
     def load_strict(self):
         """Falsklarm de senaste 14 dagarna: tecken som larmat fel vid ett bord kräver ett tecken till,
@@ -985,6 +999,7 @@ class Context:
                 print(f"Kunde inte hämta falsklarm: {e}")
             return
         strict = local_ai.strict_triggers([r for r in rows if r.get("type") == "EMERGENCY"])
+        self.strict = strict
         local_model.set_strict(strict)
         if strict:
             print(f"Försiktigare SOS efter falsklarm vid {len(strict)} bord.")
@@ -1096,8 +1111,12 @@ def main():
                 pass
 
 
+current_context: "Context | None" = None  # läses av GET /learned
+
+
 def run_loop(tables):
-    context = Context()
+    global current_context
+    context = current_context = Context()
     last_reload = last_context = time.time()
     was_complete = bool(setup.get("complete"))
     while True:

@@ -135,6 +135,16 @@ export async function engineStatus(restaurantId: string): Promise<{
   }
 }
 
+/** GET /learned: det AI:n har lärt sig om restaurangen, eller null om motorn inte svarar. */
+export async function engineLearned(restaurantId: string): Promise<Record<string, unknown> | null> {
+  try {
+    const res = await engineFetch(restaurantId, '/learned', { timeoutMs: 4000 });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
 /** POST till AI-motorn där svaret läses som en ström (Vakti). null = motorn är inte igång. */
 export async function engineStream(restaurantId: string, path: string, body: unknown): Promise<Response | null> {
   try {
