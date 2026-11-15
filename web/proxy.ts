@@ -45,6 +45,9 @@ const LIMITS: [prefix: string, write: number, read: number][] = [
   ['/api/engine/device/start', 5, 30],
   ['/api/engine/device/poll', 40, 40],
   ['/api/engine/device/approve', 10, 30],
+  // Kameraguiden: sökningen i restaurangens nät, och lösenordsförsök mot kamerorna (de kan låsa sig)
+  ['/api/setup/cameras/discover', 5, 60],
+  ['/api/setup/cameras/connect', 20, 60],
   ['/api/billing/', 10, 60],
   ['/api/support', 10, 120],
   ['/api/', 120, 600],
