@@ -460,6 +460,9 @@ const es: Dict = {
   'demo.notice': "Demo con datos de ejemplo, no es tu restaurante. Las mesas cambian de color solas. Toca una mesa para ver más.",
   'demo.back': "Ir a la configuración",
   'gate.demo': "Ver cómo se ve (demo)",
+  'offline.banner': "Sin conexión. Mostrando la situación de las {time}.",
+  'offline.queued': "{n} acciones se enviarán cuando vuelva la conexión.",
+  'offline.sending': "La conexión ha vuelto. Enviando {n} acciones…",
 };
 
 export default es;

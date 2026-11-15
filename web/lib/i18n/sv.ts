@@ -493,6 +493,9 @@ const sv = {
   'demo.notice': "Demo med låtsasdata, inte din restaurang. Borden byter färg av sig själva. Tryck på ett bord för att se mer.",
   'demo.back': "Till installationen",
   'gate.demo': "Se hur det ser ut (demo)",
+  'offline.banner': "Ingen uppkoppling. Visar läget från {time}.",
+  'offline.queued': "{n} tryck skickas när nätet är tillbaka.",
+  'offline.sending': "Uppkopplingen är tillbaka. Skickar {n} tryck…",
 } as const;
 
 export type Key = keyof typeof sv;

@@ -8,6 +8,8 @@ import { useFloorPlan } from '@/lib/useFloorPlan';
 import { useStaffAlerts } from '@/lib/useStaffAlerts';
 import { useOrders } from '@/lib/useOrders';
 import DashboardView from '../components/DashboardView';
+import OfflineNotice from '../components/OfflineNotice';
+import { useOfflineQueue } from '@/lib/useOfflineQueue';
 import { translate, useT } from '@/lib/i18n';
 import { getSettings } from '@/lib/settings';
 
@@ -32,6 +34,7 @@ export default function Dashboard() {
   const t = useT();
   const { plan } = useFloorPlan();
   const alerts = useStaffAlerts();
+  const queue = useOfflineQueue(isConnected);
 
   // Realtidslyssnaren skapas en gång, så den läser senaste borden och larmfunktionen via refs
   const tablesRef = useRef(tables);
@@ -53,7 +56,8 @@ export default function Dashboard() {
     (order) => {
       const table = tablesRef.current.find((t) => t.id === order.table_id);
       alerts.notifyGuestOrder(order, table?.table_number ?? null);
-    }
+    },
+    (orderId) => queue.push({ kind: 'serve', id: orderId })
   );
 
   // Klockan får bara läsas i webbläsaren, inte när sidan renderas
@@ -159,11 +163,19 @@ export default function Dashboard() {
     setTasks((prev) => prev.filter((t) => t.id !== id));
     alerts.dismiss(id);
 
-    const res = await fetch(`/api/tasks/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(falseAlarm ? { false_alarm: true } : {}),
-    });
+    // Utan uppkoppling: köa trycket, det skickas när nätet är tillbaka
+    const later = () => queue.push({ kind: 'task', id, falseAlarm });
+    if (!navigator.onLine) return later();
+    let res: Response;
+    try {
+      res = await fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(falseAlarm ? { false_alarm: true } : {}),
+      });
+    } catch {
+      return later();
+    }
     if (!res.ok && res.status !== 404) {
       const body = await res.json().catch(() => ({}));
       setError(`Kunde inte klarmarkera uppgiften: ${body.error ?? res.statusText}`);
@@ -174,7 +186,7 @@ export default function Dashboard() {
   return (
     <DashboardView
       tables={tables}
-      tasks={tasks}
+      tasks={tasks.filter((x) => !queue.queued.has(`task:${x.id}`))}
       cameras={cameras}
       plan={plan}
       engine={engine}
@@ -191,8 +203,9 @@ export default function Dashboard() {
       selectedTableId={selectedTableId}
       onSelectTable={setSelectedTableId}
       onCompleteTask={completeTask}
-      orders={orders}
+      orders={{ ...orders, orders: orders.orders.filter((o) => !queue.queued.has(`serve:${o.id}`)) }}
       alerts={alerts}
+      notice={<OfflineNotice down={queue.down} downSince={queue.downSince} pending={queue.pending} />}
     />
   );
 }

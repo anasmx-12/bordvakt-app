@@ -460,6 +460,9 @@ const zh: Dict = {
   'demo.notice': "演示使用示例数据，并非你的餐厅。桌子会自动变色。点击桌子查看详情。",
   'demo.back': "前往设置",
   'gate.demo': "看看效果（演示）",
+  'offline.banner': "无网络连接。显示的是 {time} 的情况。",
+  'offline.queued': "{n} 个操作将在网络恢复后发送。",
+  'offline.sending': "网络已恢复。正在发送 {n} 个操作…",
 };
 
 export default zh;

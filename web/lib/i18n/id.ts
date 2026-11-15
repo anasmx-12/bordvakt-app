@@ -460,6 +460,9 @@ const id: Dict = {
   'demo.notice': "Demo dengan data contoh, bukan restoran Anda. Meja berganti warna sendiri. Ketuk meja untuk melihat lebih banyak.",
   'demo.back': "Ke pengaturan",
   'gate.demo': "Lihat tampilannya (demo)",
+  'offline.banner': "Tidak ada koneksi. Menampilkan keadaan pukul {time}.",
+  'offline.queued': "{n} ketukan akan dikirim saat koneksi kembali.",
+  'offline.sending': "Koneksi kembali. Mengirim {n} ketukan…",
 };
 
 export default id;

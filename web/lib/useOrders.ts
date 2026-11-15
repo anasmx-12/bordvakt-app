@@ -4,22 +4,31 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from './supabase';
 import { isActiveOrder, Order, OrderItem, OrderStatus } from './types';
 
+const OFFLINE_ERROR = 'Ingen uppkoppling. Försök igen när nätet är tillbaka.';
+
 /**
  * Pågående beställningar i realtid.
  * onReady anropas när köket markerar en beställning som klar.
  * available = false betyder att databasen saknar orders-tabellen (003 inte körd).
  */
-export function useOrders(onReady?: (order: Order) => void, onGuestOrder?: (order: Order) => void) {
+export function useOrders(
+  onReady?: (order: Order) => void,
+  onGuestOrder?: (order: Order) => void,
+  /** Utan uppkoppling: köa "serverad" i stället för att backa (bara Matsalen skickar med den) */
+  queueServe?: (orderId: string) => void
+) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [available, setAvailable] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const onReadyRef = useRef(onReady);
   const onGuestRef = useRef(onGuestOrder);
   const ordersRef = useRef(orders);
+  const queueRef = useRef(queueServe);
   useEffect(() => {
     onReadyRef.current = onReady;
     onGuestRef.current = onGuestOrder;
     ordersRef.current = orders;
+    queueRef.current = queueServe;
   });
 
   useEffect(() => {
@@ -69,11 +78,28 @@ export function useOrders(onReady?: (order: Order) => void, onGuestOrder?: (orde
     setOrders((prev) =>
       isActiveOrder(optimistic) ? prev.map((o) => (o.id === order.id ? optimistic : o)) : prev.filter((o) => o.id !== order.id)
     );
-    const res = await fetch(`/api/orders/${order.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
+    const revert = () =>
+      setOrders((prev) => [...prev.filter((o) => o.id !== order.id), order].sort((a, b) => a.created_at.localeCompare(b.created_at)));
+    const offline = () => {
+      if (status === 'SERVED' && queueRef.current) {
+        queueRef.current(order.id); // skickas när nätet är tillbaka
+        return true;
+      }
+      setError(OFFLINE_ERROR);
+      revert();
+      return false;
+    };
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return offline();
+    let res: Response;
+    try {
+      res = await fetch(`/api/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+    } catch {
+      return offline();
+    }
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       setError(body.error ?? 'Kunde inte uppdatera beställningen');
@@ -84,11 +110,17 @@ export function useOrders(onReady?: (order: Order) => void, onGuestOrder?: (orde
   }, []);
 
   const create = useCallback(async (tableId: string, items: OrderItem[], note: string) => {
-    const res = await fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ table_id: tableId, items, note }),
-    });
+    let res: Response;
+    try {
+      res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table_id: tableId, items, note }),
+      });
+    } catch {
+      setError(OFFLINE_ERROR); // nya beställningar köas inte: de kan bli dubbla eller fel
+      return false;
+    }
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
       setError(body.error ?? 'Kunde inte spara beställningen');

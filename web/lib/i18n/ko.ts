@@ -460,6 +460,9 @@ const ko: Dict = {
   'demo.notice': "샘플 데이터로 된 데모이며 실제 매장이 아닙니다. 테이블 색이 저절로 바뀝니다. 테이블을 눌러 자세히 보세요.",
   'demo.back': "설정으로 이동",
   'gate.demo': "어떻게 보이는지 보기 (데모)",
+  'offline.banner': "연결이 없습니다. {time} 기준 상황을 표시합니다.",
+  'offline.queued': "연결이 돌아오면 {n}개의 작업이 전송됩니다.",
+  'offline.sending': "연결이 돌아왔습니다. {n}개의 작업을 전송 중…",
 };
 
 export default ko;

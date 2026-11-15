@@ -460,6 +460,9 @@ const ja: Dict = {
   'demo.notice': "サンプルデータのデモで、あなたのお店ではありません。テーブルの色は自動で変わります。テーブルをタップすると詳細が見られます。",
   'demo.back': "設定へ",
   'gate.demo': "どんな画面か見る（デモ）",
+  'offline.banner': "接続がありません。{time} 時点の状況を表示しています。",
+  'offline.queued': "{n} 件の操作は接続が戻ると送信されます。",
+  'offline.sending': "接続が戻りました。{n} 件の操作を送信中…",
 };
 
 export default ja;

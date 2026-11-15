@@ -460,6 +460,9 @@ const tr: Dict = {
   'demo.notice': "Örnek verilerle demo, sizin restoranınız değil. Masalar kendiliğinden renk değiştirir. Daha fazlası için bir masaya dokunun.",
   'demo.back': "Kuruluma git",
   'gate.demo': "Nasıl göründüğüne bakın (demo)",
+  'offline.banner': "Bağlantı yok. {time} itibarıyla durum gösteriliyor.",
+  'offline.queued': "{n} işlem bağlantı gelince gönderilecek.",
+  'offline.sending': "Bağlantı geri geldi. {n} işlem gönderiliyor…",
 };
 
 export default tr;

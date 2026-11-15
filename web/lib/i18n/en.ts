@@ -460,6 +460,9 @@ const en: Dict = {
   'demo.notice': "Demo with sample data, not your restaurant. The tables change colour by themselves. Tap a table to see more.",
   'demo.back': "Go to setup",
   'gate.demo': "See what it looks like (demo)",
+  'offline.banner': "No connection. Showing the situation from {time}.",
+  'offline.queued': "{n} taps will be sent when the connection is back.",
+  'offline.sending': "Connection is back. Sending {n} taps…",
 };
 
 export default en;
