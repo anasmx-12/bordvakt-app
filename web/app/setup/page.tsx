@@ -733,6 +733,17 @@ function CalibrateStep({
           Välj ett bord, välj kameran som ser det och rita en ruta runt bordet i kamerabilden. Ta med stolarna.
         </p>
         <SupportLink topic="calibrate">Vill ni att vi kalibrerar borden åt er?</SupportLink>
+        {status.unmapped_tables.length > 0 && (
+          <p className="rounded-lg bg-dessert-light/60 p-3 text-sm text-body">
+            Bord som ingen kamera ser ännu: <strong>{status.unmapped_tables.join(', ')}</strong>. Rita dem i en kamera
+            nedan, eller{' '}
+            {/* Vanlig länk: steget läses från adressen när sidan laddas */}
+            <a href="/setup?step=cameras" className="font-semibold underline">
+              lägg till en kamera till
+            </a>
+            .
+          </p>
+        )}
         <PlanPicker plan={plan} tables={tables} selectedId={selectedId} uncalibrated={uncalibrated} onSelect={(t) => select(t, cameraId || cameras[0]?.id)} />
         <ul className="grid grid-cols-3 gap-1.5">
           {tables.map((t) => {
