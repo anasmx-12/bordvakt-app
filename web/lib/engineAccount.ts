@@ -1,7 +1,7 @@
 import 'server-only';
 import { randomBytes } from 'crypto';
 import { engineKey } from './engine';
-import { serverSupabase, UserError } from './server';
+import { currentRestaurantId, currentUser, serverSupabase, UserError } from './server';
 
 // AI-datorns eget konto (roll 'engine', se supabase/014_engine_accounts.sql).
 // Kopplingskoden innehåller allt datorn behöver: databasens adress, den publika nyckeln,
@@ -74,4 +74,14 @@ export async function hasEngineAccount(restaurantId: string) {
     .eq('restaurant_id', restaurantId)
     .eq('role', 'engine');
   return (count ?? 0) > 0;
+}
+
+/** Restaurangen för den inloggade, om hen är ägaren. Bara ägaren kopplar AI-datorn. */
+export async function ownerRestaurant(): Promise<{ restaurantId: string; userId: string }> {
+  const supabase = serverSupabase();
+  const restaurantId = await currentRestaurantId(supabase);
+  const user = await currentUser();
+  const { data: member } = await supabase.from('restaurant_members').select('role').eq('user_id', user!.id).eq('restaurant_id', restaurantId).maybeSingle();
+  if (member?.role !== 'owner') throw new UserError('Bara ägaren kan koppla AI-datorn.', 403);
+  return { restaurantId, userId: user!.id };
 }

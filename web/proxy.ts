@@ -41,6 +41,10 @@ const LIMITS: [prefix: string, write: number, read: number][] = [
   ['/api/loyalty/redeem', 10, 60],
   // Ny kopplingskod loggar ut AI-datorn, betalning och support skapar saker hos Stripe och i mejl
   ['/api/engine/pair', 5, 60],
+  // AI-datorn ber om en kod och frågar var 4:e sekund om den är godkänd
+  ['/api/engine/device/start', 5, 30],
+  ['/api/engine/device/poll', 40, 40],
+  ['/api/engine/device/approve', 10, 30],
   ['/api/billing/', 10, 60],
   ['/api/support', 10, 120],
   ['/api/', 120, 600],
@@ -102,6 +106,8 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith('/w/') || pathname.startsWith('/api/waitlist-link/') || pathname.startsWith('/api/cron/') || pathname.startsWith('/api/hooks/')) {
     return NextResponse.next();
   }
+  // AI-datorn kopplas med en kort kod innan den har någon inloggning (se lib/devicePairing.ts)
+  if (pathname === '/api/engine/device/start' || pathname === '/api/engine/device/poll') return NextResponse.next();
   // Bekräfta e-post med koden (rutterna kontrollerar själva vem som anropar)
   if (pathname.startsWith('/api/signup/')) return NextResponse.next();
   // Mobil-larmets filer måste nås innan inloggning

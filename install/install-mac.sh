@@ -104,17 +104,76 @@ say "4/5 Koppla datorn till restaurangen"
 ENV="$DIR/.env"
 [ -f "$ENV" ] || cp "$DIR/.env.example" "$ENV"
 CURRENT="$(grep -E '^ENGINE_CODE=BV1\.' "$ENV" | cut -d= -f2- || true)"
-echo "Skapa koden i webbappen: Inställningar → AI-datorn → Skapa kopplingskod."
-if [ -n "$CURRENT" ]; then
-  echo "(Tryck bara Enter för att behålla koden som redan finns.)"
-fi
+PY="$DIR/.venv/bin/python"
+# Läser ett fält ur JSON-svaret från webbappen (ingen nätverkskod i Python: curl sköter det)
+json() { "$PY" -I -c 'import json,sys; d=json.load(sys.stdin); v=d.get(sys.argv[1], ""); print(v if isinstance(v, (str, int)) else "")' "$1" 2>/dev/null || true; }
+
+# Webbappens adress: angiven, medskickad i mappen, eller den lokala under utveckling
+WEB_URL="${BORDVAKT_WEB_URL:-}"
+[ -z "$WEB_URL" ] && [ -f "$DIR/install/web-url.txt" ] && WEB_URL="$(head -1 "$DIR/install/web-url.txt" | tr -d '[:space:]')"
+[ -z "$WEB_URL" ] && [ -f "$DIR/web/.env.local" ] && WEB_URL="$(grep -E '^NEXT_PUBLIC_SITE_URL=https?://' "$DIR/web/.env.local" | cut -d= -f2- | tr -d '[:space:]' || true)"
+[ -z "$WEB_URL" ] && curl -s -m 2 -o /dev/null http://localhost:3000/login && WEB_URL="http://localhost:3000"
+WEB_URL="${WEB_URL:-https://app.bordvakt.se}"
+WEB_URL="${WEB_URL%/}"
+
 CODE="${BORDVAKT_CODE:-}"   # kan också ges i förväg: BORDVAKT_CODE=BV1.... bash install/install-mac.sh
+if [ -z "$CODE" ] && [ -n "$CURRENT" ]; then
+  read -r -p "Datorn är redan kopplad. Koppla den till en restaurang på nytt? [j/N] " AGAIN </dev/tty || AGAIN=n
+  case "$AGAIN" in [jJyY]*) ;; *) CODE="$CURRENT" ;; esac
+fi
+
+# Vanliga sättet: datorn visar en kort kod som ägaren skriver in i webbappen
+pair_with_code() {
+  local name resp shown device interval expires dialog status reply tries=0
+  name="$(scutil --get ComputerName 2>/dev/null || hostname)"
+  name="$(printf '%s' "$name" | "$PY" -I -c 'import json,sys; print(json.dumps({"name": sys.stdin.read()[:60]}))')"
+  while [ $tries -lt 3 ]; do
+    tries=$((tries + 1))
+    resp="$(curl -s -m 15 -X POST -H 'Content-Type: application/json' -d "$name" "$WEB_URL/api/engine/device/start")" || return 1
+    shown="$(printf '%s' "$resp" | json code)"
+    device="$(printf '%s' "$resp" | json device)"
+    interval="$(printf '%s' "$resp" | json interval)"
+    expires="$(printf '%s' "$resp" | json expires_in)"
+    if [ -z "$shown" ] || [ -z "$device" ]; then
+      reply="$(printf '%s' "$resp" | json error)"
+      [ -n "$reply" ] && echo "Webbappen svarade: $reply"
+      return 1
+    fi
+    printf '\n  Öppna Bordvakt på mobilen eller datorn:\n  Inställningar → AI-datorn → Koppla dator\n\n  Skriv in koden:   \033[1m%s\033[0m\n\n  (gäller i 10 minuter, väntar på att du godkänner …)\n' "$shown"
+    osascript -e "display dialog \"Skriv in koden i Bordvakt:\n\nInställningar → AI-datorn → Koppla dator\n\n$shown\" with title \"Koppla Bordvakt\" buttons {\"OK\"} default button \"OK\" giving up after 600" >/dev/null 2>&1 &
+    dialog=$!
+    local waited=0
+    while [ $waited -lt "${expires:-600}" ]; do
+      sleep "${interval:-4}"
+      waited=$((waited + ${interval:-4}))
+      reply="$(curl -s -m 15 -X POST -H 'Content-Type: application/json' -d "{\"device\":\"$device\"}" "$WEB_URL/api/engine/device/poll")" || continue
+      status="$(printf '%s' "$reply" | json status)"
+      if [ "$status" = "approved" ]; then
+        kill "$dialog" 2>/dev/null || true
+        CODE="$(printf '%s' "$reply" | json code)"
+        RESTAURANT="$(printf '%s' "$reply" | json restaurant)"
+        echo "Godkänd! Datorn kopplas till ${RESTAURANT:-restaurangen}."
+        return 0
+      fi
+      [ "$status" = "expired" ] && break
+    done
+    kill "$dialog" 2>/dev/null || true
+    echo "Koden gick ut. Här kommer en ny."
+  done
+  return 1
+}
+
 if [ -z "$CODE" ]; then
-  read -r -s -p "Klistra in kopplingskoden: " CODE </dev/tty || CODE=""
-  echo
+  echo "Webbappen: $WEB_URL"
+  if ! pair_with_code; then
+    # Reserv: den långa koden från Inställningar → AI-datorn → Annat sätt
+    echo "Det gick inte att koppla med en kort kod. Skapa i stället en lång kod i webbappen:"
+    echo "Inställningar → AI-datorn → Annat sätt: lång kopplingskod."
+    read -r -s -p "Klistra in kopplingskoden: " CODE </dev/tty || CODE=""
+    echo
+  fi
 fi
 CODE="$(printf '%s' "$CODE" | tr -d '[:space:]')"
-CODE="${CODE:-$CURRENT}"
 # PYTHONPATH: skriptet kan köras från vilken mapp som helst, engine_security.py ligger i $DIR
 PYTHONPATH="$DIR" "$DIR/.venv/bin/python" -c 'import sys, engine_security as s; sys.exit(0 if s.parse_code(sys.argv[1]) else 1)' "$CODE" 2>/dev/null \
   || fail "Koden ser inte rätt ut. Kopiera hela koden (den börjar med BV1.) och försök igen."

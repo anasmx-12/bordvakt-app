@@ -1,14 +1,7 @@
-import { createPairingCode, hasEngineAccount } from '@/lib/engineAccount';
-import { currentRestaurantId, currentUser, errorResponse, serverSupabase, UserError } from '@/lib/server';
+import { createPairingCode, hasEngineAccount, ownerRestaurant as owner } from '@/lib/engineAccount';
+import { errorResponse } from '@/lib/server';
 
-async function ownerRestaurant() {
-  const supabase = serverSupabase();
-  const restaurantId = await currentRestaurantId(supabase);
-  const user = await currentUser();
-  const { data: member } = await supabase.from('restaurant_members').select('role').eq('user_id', user!.id).maybeSingle();
-  if (member?.role !== 'owner') throw new UserError('Bara ägaren kan koppla AI-datorn.', 403);
-  return restaurantId;
-}
+const ownerRestaurant = async () => (await owner()).restaurantId;
 
 // GET /api/engine/pair: finns det redan en kopplad AI-dator?
 export async function GET() {
