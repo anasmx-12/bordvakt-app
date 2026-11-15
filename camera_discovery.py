@@ -9,6 +9,11 @@ from __future__ import annotations
 
 import ipaddress
 import re
+import socket
+import time
+import uuid
+import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote
 
 # ------------------------------------------------------------- Märken
@@ -93,3 +98,135 @@ def brand_from_text(text: str) -> tuple[str | None, str | None]:
         if re.search(rf"(?<![0-9A-Z]){re.escape(name)}(?![0-9A-Z])", t):
             return brand, None
     return None, None
+
+
+# ------------------------------------------------------------- Hitta kameror i nätet
+WS_DISCOVERY = ("239.255.255.250", 3702)
+SCAN_PORTS = [554, 80, 8000]
+
+PROBE = (
+    '<?xml version="1.0" encoding="UTF-8"?>'
+    '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" '
+    'xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" '
+    'xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery" '
+    'xmlns:dn="http://www.onvif.org/ver10/network/wsdl">'
+    "<s:Header>"
+    "<a:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</a:Action>"
+    "<a:MessageID>uuid:{id}</a:MessageID>"
+    "<a:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</a:To>"
+    "</s:Header>"
+    "<s:Body><d:Probe><d:Types>dn:NetworkVideoTransmitter</d:Types></d:Probe></s:Body>"
+    "</s:Envelope>"
+)
+
+
+def _local(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def parse_probe_match(xml: str) -> dict | None:
+    """Ett svar på sökningen: kamerans IP, ONVIF-adress och (om kameran säger det) märke och modell."""
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError:
+        return None
+    scopes, xaddrs = "", ""
+    for el in root.iter():
+        if _local(el.tag) == "Scopes":
+            scopes = el.text or ""
+        elif _local(el.tag) == "XAddrs":
+            xaddrs = el.text or ""
+    url = next((u for u in xaddrs.split() if re.match(r"https?://\d+\.\d+\.\d+\.\d+", u)), None)
+    if not url:
+        return None
+    ip = re.match(r"https?://(\d+\.\d+\.\d+\.\d+)", url).group(1)
+    hardware = re.search(r"onvif://www\.onvif\.org/hardware/(\S+)", scopes)
+    name = re.search(r"onvif://www\.onvif\.org/name/(\S+)", scopes)
+    hw_text = hardware.group(1).replace("%20", " ") if hardware else ""
+    brand, model = brand_from_text(hw_text)
+    if name:
+        named = brand_from_text(name.group(1).replace("%20", " "))[0]
+        brand = named or brand
+    return {"ip": ip, "onvif_url": url, "brand": brand, "model": model or (hw_text or None)}
+
+
+def _own_ip() -> str | None:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("10.255.255.255", 1))  # skickar inget, väljer bara nätkort
+        return s.getsockname()[0]
+    except OSError:
+        return None
+    finally:
+        s.close()
+
+
+def local_subnet() -> list[str]:
+    """Adresserna i Macens eget /24-nät, utom Macen själv. Tomt om Macen inte har ett lokalt nät."""
+    own = _own_ip()
+    if not own or not is_private_ip(own) or own.startswith("127."):
+        return []
+    base = own.rsplit(".", 1)[0]
+    return [f"{base}.{i}" for i in range(1, 255) if f"{base}.{i}" != own]
+
+
+def _ws_probe(timeout: float) -> list[dict]:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    found: dict[str, dict] = {}
+    try:
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+        sock.settimeout(0.5)
+        sock.sendto(PROBE.format(id=uuid.uuid4()).encode(), WS_DISCOVERY)
+        end = time.monotonic() + timeout
+        while time.monotonic() < end:
+            try:
+                data, _ = sock.recvfrom(65535)
+            except socket.timeout:
+                continue
+            match = parse_probe_match(data.decode("utf-8", "replace"))
+            if match and is_private_ip(match["ip"]):
+                found[match["ip"]] = match
+    except OSError:
+        pass
+    finally:
+        sock.close()
+    return list(found.values())
+
+
+def _open(ip: str, port: int) -> bool:
+    try:
+        with socket.create_connection((ip, port), timeout=0.4):
+            return True
+    except OSError:
+        return False
+
+
+def _port_scan() -> dict[str, list[int]]:
+    hosts = local_subnet()
+    jobs = [(ip, port) for ip in hosts for port in SCAN_PORTS]
+    with ThreadPoolExecutor(max_workers=64) as pool:
+        results = list(pool.map(lambda j: _open(*j), jobs))
+    out: dict[str, list[int]] = {}
+    for (ip, port), ok in zip(jobs, results):
+        if ok:
+            out.setdefault(ip, []).append(port)
+    return out
+
+
+def discover(timeout: float = 3.0, probe=None, scan=None) -> list[dict]:
+    """Kamerorna i restaurangens nät: de som svarar på ONVIF-sökningen och de som har RTSP-porten öppen."""
+    probe = probe or _ws_probe
+    scan = scan or _port_scan
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        onvif_job = pool.submit(probe, timeout)
+        scan_job = pool.submit(scan)
+        onvif, ports = onvif_job.result(), scan_job.result()
+    cameras: dict[str, dict] = {}
+    for m in onvif:
+        cameras[m["ip"]] = {"ip": m["ip"], "onvif_url": m.get("onvif_url"), "ports": [], "brand": m.get("brand"), "model": m.get("model")}
+    for ip, open_ports in ports.items():
+        if ip not in cameras and 554 not in open_ports:
+            continue  # router, skrivare: ingen video
+        cam = cameras.setdefault(ip, {"ip": ip, "onvif_url": None, "ports": [], "brand": None, "model": None})
+        cam["ports"] = sorted(set(cam["ports"]) | set(open_ports))
+    return sorted(cameras.values(), key=lambda c: tuple(int(x) for x in c["ip"].split(".")))

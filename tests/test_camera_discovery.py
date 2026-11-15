@@ -71,5 +71,44 @@ class RtspUrlTest(unittest.TestCase):
         self.assertIsNone(cd.rtsp_url("10.0.0.3", "other", "admin", "x"))
 
 
+PROBE_MATCH = """<?xml version="1.0"?><s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+ xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery"><s:Body><d:ProbeMatches><d:ProbeMatch>
+ <d:Scopes>onvif://www.onvif.org/type/video_encoder onvif://www.onvif.org/hardware/DS-2CD2143G2-I
+ onvif://www.onvif.org/name/HIKVISION</d:Scopes>
+ <d:XAddrs>http://[fe80::1]/onvif/device_service http://192.168.1.64/onvif/device_service</d:XAddrs>
+ </d:ProbeMatch></d:ProbeMatches></s:Body></s:Envelope>"""
+
+
+class ProbeMatchTest(unittest.TestCase):
+    def test_parses_ip_url_brand_model(self):
+        self.assertEqual(cd.parse_probe_match(PROBE_MATCH), {
+            "ip": "192.168.1.64", "onvif_url": "http://192.168.1.64/onvif/device_service",
+            "brand": "hikvision", "model": "DS-2CD2143G2-I"})
+
+    def test_garbage(self):
+        self.assertIsNone(cd.parse_probe_match("<not xml"))
+
+    def test_probe_is_for_video_devices(self):
+        self.assertIn("NetworkVideoTransmitter", cd.PROBE)
+
+
+class DiscoverTest(unittest.TestCase):
+    def test_merges_onvif_and_port_scan(self):
+        found = cd.discover(
+            probe=lambda t: [{"ip": "192.168.1.64", "onvif_url": "http://192.168.1.64/onvif/device_service", "brand": "hikvision", "model": "X"}],
+            scan=lambda: {"192.168.1.64": [554, 80], "192.168.1.80": [554]})
+        self.assertEqual([d["ip"] for d in found], ["192.168.1.64", "192.168.1.80"])
+        self.assertEqual(found[0]["ports"], [80, 554])
+        self.assertIsNone(found[1]["onvif_url"])
+
+    def test_hosts_with_only_port_80_are_dropped(self):
+        # en skrivare eller router är ingen kamera: utan ONVIF krävs port 554
+        self.assertEqual(cd.discover(probe=lambda t: [], scan=lambda: {"192.168.1.1": [80]}), [])
+
+    def test_sorted_numerically(self):
+        found = cd.discover(probe=lambda t: [], scan=lambda: {"192.168.1.100": [554], "192.168.1.9": [554]})
+        self.assertEqual([d["ip"] for d in found], ["192.168.1.9", "192.168.1.100"])
+
+
 if __name__ == "__main__":
     unittest.main()
