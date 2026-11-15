@@ -42,6 +42,7 @@ export default function DpaPage() {
         <li>Vercel, för driften.</li>
         <li>Cloudflare, för tunneln.</li>
         <li>Stripe, för betalningar.</li>
+        <li>46elks AB (Sverige), för sms till gäster i kölistan.</li>
         <li>Google, för e-post.</li>
       </ul>
       <p>

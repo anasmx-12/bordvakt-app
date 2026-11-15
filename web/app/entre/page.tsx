@@ -55,6 +55,7 @@ export default function EntrancePage() {
   const [tables, setTables] = useState<DiningTable[]>([]);
   const [avgSitting, setAvgSitting] = useState(60);
   const [error, setError] = useState<string | null>(null);
+  const [smsNote, setSmsNote] = useState<{ ok: boolean; text: string } | null>(null);
   const [missing, setMissing] = useState(false);
   const [name, setName] = useState('');
   const [size, setSize] = useState(2);
@@ -127,10 +128,18 @@ export default function EntrancePage() {
     [tables, free, avgSitting]
   );
 
+  function showSms(result: unknown) {
+    if (result === 'sent') setSmsNote({ ok: true, text: t('entre.smsSent') });
+    else if (result === 'logged') setSmsNote({ ok: false, text: t('entre.smsOff') });
+    else if (result === 'failed' || result === 'invalid') setSmsNote({ ok: false, text: t('entre.smsFailed') });
+    else setSmsNote(null);
+  }
+
   async function patch(p: Party, status: Party['status'], tableId?: string) {
     const res = await fetch(`/api/waitlist/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status, table_id: tableId }) });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) return setError(body.error ?? t('common.error'));
+    if (status === 'NOTIFIED') showSms(body.sms);
     load();
   }
 
@@ -149,6 +158,7 @@ export default function EntrancePage() {
     setPhone('');
     setNote('');
     setSize(2);
+    showSms(body.sms);
     await load();
     showQr(body as Party);
   }
@@ -174,6 +184,14 @@ export default function EntrancePage() {
       <div className="grid max-w-[1100px] gap-5 lg:grid-cols-[360px_1fr]">
         <div className="flex flex-col gap-4">
           {missing && <Banner title={t('entre.missingTitle')}>{t('entre.missing')}</Banner>}
+          {smsNote && (
+            <p role="status" className={`flex items-start justify-between gap-2 rounded-lg px-3 py-2 text-sm font-semibold ${smsNote.ok ? 'bg-teal-light text-teal' : 'bg-amber-100 text-amber-900'}`}>
+              <span>{smsNote.text}</span>
+              <button type="button" onClick={() => setSmsNote(null)} aria-label={t('common.close')} className="min-h-6 flex-none px-1">
+                <X className="h-4 w-4" />
+              </button>
+            </p>
+          )}
           {error && (
             <Banner role="alert" action={<button onClick={() => setError(null)} className="btn btn-ghost btn-sm">{t('common.close')}</button>}>
               {error}
@@ -206,7 +224,8 @@ export default function EntrancePage() {
             </div>
             <label className="flex flex-col gap-1">
               <span className="field-label">{t('entre.phone')}</span>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={40} inputMode="tel" className="field" />
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={40} inputMode="tel" autoComplete="off" placeholder="070-123 45 67" className="field" />
+              <span className="text-[12px] text-muted">{t('entre.phoneHint')}</span>
             </label>
             <label className="flex flex-col gap-1">
               <span className="field-label">{t('entre.note')}</span>

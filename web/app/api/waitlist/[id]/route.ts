@@ -1,5 +1,5 @@
 import { currentRestaurantId, errorResponse, serverSupabase, UserError } from '@/lib/server';
-import { missingWaitlist, PARTY_FIELDS, WAIT_STATUSES, WaitStatus } from '@/lib/waitlist';
+import { guestSms, missingWaitlist, PARTY_FIELDS, WAIT_STATUSES, WaitStatus } from '@/lib/waitlist';
 
 // PATCH /api/waitlist/[id] { status, table_id? }
 // NOTIFIED = bordet är klart (gästens länk visar det), SEATED = har fått bord, LEFT = gick, WAITING = ångra
@@ -22,10 +22,13 @@ export async function PATCH(req: Request, ctx: RouteContext<'/api/waitlist/[id]'
       }
     }
     if (status === 'WAITING') Object.assign(row, { notified_at: null, seated_at: null, table_id: null });
-    const { data, error } = await supabase.from('waitlist').update(row).eq('id', id).eq('restaurant_id', restaurantId).select(PARTY_FIELDS).maybeSingle();
+    let q = supabase.from('waitlist').update(row).eq('id', id).eq('restaurant_id', restaurantId);
+    if (status === 'NOTIFIED') q = q.eq('status', 'WAITING'); // besked (och sms) bara en gång
+    const { data, error } = await q.select(PARTY_FIELDS).maybeSingle();
     if (error) throw missingWaitlist(error.message);
-    if (!data) throw new UserError('Sällskapet finns inte', 404);
-    return Response.json(data);
+    if (!data) throw new UserError(status === 'NOTIFIED' ? 'Gästen har redan fått besked, eller finns inte i kön.' : 'Sällskapet finns inte', 404);
+    const sms = status === 'NOTIFIED' ? await guestSms(supabase, restaurantId, data, 'ready', new URL(req.url).origin) : null;
+    return Response.json({ ...data, sms });
   } catch (err) {
     return errorResponse(err);
   }

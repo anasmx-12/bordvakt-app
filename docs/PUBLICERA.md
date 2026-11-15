@@ -8,7 +8,7 @@ Köp en domän, t.ex. `bordvakt.se` (Loopia, One.com eller Cloudflare). Appen ka
 
 ## 2. Supabase (databasen)
 1. Uppgradera projektet till **Pro**. Då får ni dagliga backuper och databasen pausas inte.
-2. Kör de SQL-filer som inte är körda än i SQL Editor: `014_engine_accounts.sql`, `015_webhooks.sql`, `016_identity.sql`, `017_remove_bankid.sql`, `018_rate_limits.sql`, `019_support_staff.sql`, `020_password_resets.sql` och `021_ai_learning.sql`.
+2. Kör de SQL-filer som inte är körda än i SQL Editor: `014_engine_accounts.sql`, `015_webhooks.sql`, `016_identity.sql`, `017_remove_bankid.sql`, `018_rate_limits.sql`, `019_support_staff.sql`, `020_password_resets.sql`, `021_ai_learning.sql`, `022_engine_pairing.sql` och `023_support_access.sql`.
 3. Authentication → URL Configuration:
    - Site URL: `https://app.bordvakt.se`
    - Redirect URLs: `https://app.bordvakt.se/**`
@@ -30,6 +30,7 @@ Köp en domän, t.ex. `bordvakt.se` (Loopia, One.com eller Cloudflare). Appen ka
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | från `web/.env.local` |
 | `CRON_SECRET` | en lång slumpad sträng, t.ex. från `openssl rand -hex 32` |
 | `DB_WEBHOOK_SECRET` | en annan lång slumpad sträng (`openssl rand -hex 32`) |
+| `ELKS_API_USERNAME`, `ELKS_API_PASSWORD`, `SMS_FROM` | se steg 5b (sms till väntelistan, valfritt) |
 | `SUPPORT_API_SECRET` | en tredje slumpad sträng (`openssl rand -hex 32`), samma i supportsajten |
 | `SUPPORT_SITE_URL` | `https://support.bordvakt.se` |
 
@@ -47,6 +48,13 @@ Köp en domän, t.ex. `bordvakt.se` (Loopia, One.com eller Cloudflare). Appen ka
 1. Slå på tvåstegsverifiering på Gmail-kontot.
 2. Skapa ett applösenord: myaccount.google.com → Säkerhet → Applösenord.
 3. Lägg in det som `GMAIL_APP_PASSWORD`, och adressen som `GMAIL_USER` och `SUPPORT_EMAIL`.
+
+## 5b. Sms till väntelistan (valfritt)
+Gästen får sms när hen ställs i kön och när bordet är klart. Utan nycklar skickas inga sms (de skrivs bara i loggen) och entrén visar QR-koden som vanligt.
+1. Skapa ett konto på 46elks.se och fyll på krediter (ca 0,50 kr per sms).
+2. Kopiera API-användarnamnet och lösenordet (Konto → API) till `ELKS_API_USERNAME` och `ELKS_API_PASSWORD`.
+3. Valfritt: `SMS_FROM` = avsändarnamnet gästen ser, högst 11 bokstäver/siffror (standard `Bordvakt`).
+4. Telefonnummer är personuppgifter: väntelistan rensas automatiskt, och sms:en nämns i integritetspolicyn (kontrollera vid juridisk granskning).
 
 ## 6. Cloudflare (fast adress till AI-datorn, valfritt men rekommenderat)
 Utan det här fungerar tunneln ändå, men adressen byts när AI-datorn startar om.

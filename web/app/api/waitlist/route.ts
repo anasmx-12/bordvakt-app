@@ -1,5 +1,6 @@
 import { currentRestaurantId, errorResponse, serverSupabase, UserError } from '@/lib/server';
-import { averageSitting, missingWaitlist, PARTY_FIELDS } from '@/lib/waitlist';
+import { averageSitting, guestSms, missingWaitlist, PARTY_FIELDS } from '@/lib/waitlist';
+import { normalizePhone } from '@/lib/sms';
 
 // GET /api/waitlist — kön just nu (väntar + har fått besked), och hur länge sällskap brukar sitta
 export async function GET() {
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
     if (!name) throw new UserError('Skriv ett namn');
     if (!(size >= 1 && size <= 50)) throw new UserError('Antal gäster ska vara 1–50');
     const phone = typeof body?.phone === 'string' && body.phone.trim() ? body.phone.trim().slice(0, 40) : null;
+    if (phone && !normalizePhone(phone)) throw new UserError('Telefonnumret ser inte rätt ut. Skriv t.ex. 070-123 45 67, eller lämna fältet tomt.');
     const note = typeof body?.note === 'string' && body.note.trim() ? body.note.trim().slice(0, 300) : null;
     const quoted = Math.round(Number(body?.quoted_minutes));
     const supabase = serverSupabase();
@@ -38,7 +40,8 @@ export async function POST(req: Request) {
       .select(PARTY_FIELDS)
       .single();
     if (error) throw missingWaitlist(error.message);
-    return Response.json(data, { status: 201 });
+    const sms = await guestSms(supabase, restaurantId, data, 'joined', new URL(req.url).origin);
+    return Response.json({ ...data, sms }, { status: 201 });
   } catch (err) {
     return errorResponse(err);
   }

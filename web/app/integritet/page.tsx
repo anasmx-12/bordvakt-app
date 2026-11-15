@@ -36,7 +36,7 @@ export default function PrivacyPage() {
           namnet på betalkortet hos Stripe. Sparas så länge kontot finns.</li>
         <li><b>Betalning</b> (företagsuppgifter, abonnemang): sköts av Stripe. Vi sparar inga kortuppgifter. Bokföringsunderlag sparas i 7 år enligt bokföringslagen.</li>
         <li><b>Support</b> (namn, e-post, telefon, meddelanden): för att hjälpa kunden. Sparas i högst 24 månader efter att ärendet är avslutat.</li>
-        <li><b>Kölistan</b> (gästens namn, sällskapets storlek, telefon om gästen anger det): för att kunna ropa upp gästen. Raderas automatiskt efter {WAITLIST_DAYS} dagar.</li>
+        <li><b>Kölistan</b> (gästens namn, sällskapets storlek, telefon om gästen anger det): för att kunna ropa upp gästen. Har gästen lämnat ett nummer skickas ett sms när hen ställs i kön och när bordet är klart. Raderas automatiskt efter {WAITLIST_DAYS} dagar.</li>
         <li><b>QR-beställningar</b> (vad som beställts, bord, tid): inga namn eller kontaktuppgifter. Används för köket och restaurangens statistik.</li>
         <li><b>Recensioner</b> (betyg och frivillig kommentar): skrivs inte om gästen inte vill. Gästen bör inte skriva personuppgifter i kommentaren.</li>
         <li><b>Stämpelkort</b>: en slumpad kod som sparas i gästens webbläsare, utan namn eller kontaktuppgifter.</li>
@@ -55,6 +55,7 @@ export default function PrivacyPage() {
         <li>Cloudflare: krypterad tunnel till restaurangens AI-dator.</li>
         <li>Stripe: betalningar. Stripe får ditt namn, kortinnehavarens namn och fakturaadress.</li>
         <li>Google (Gmail): e-post, till exempel morgonrapporten och supportsvar.</li>
+        <li>46elks (Sverige): sms till gäster i kölistan. 46elks får telefonnumret och sms-texten.</li>
       </ul>
       <p>
         Om uppgifter överförs utanför EU/EES sker det med stöd av EU-kommissionens standardavtalsklausuler eller
