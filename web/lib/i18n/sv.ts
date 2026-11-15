@@ -478,6 +478,18 @@ const sv = {
   'off.text': "Restaurangens ägare har stängt av den. Den kan slås på igen under Inställningar → Anpassa funktioner.",
   'off.link': "Anpassa funktioner",
   'gate.progress': "{n} av 4 steg klara",
+  'guide.title': "Så läser du färgerna",
+  'guide.intro': "Varje bord får en färg efter vad gästerna behöver. Det viktigaste står överst.",
+  'guide.ok': "Jag förstår",
+  'guide.open': "Vad betyder färgerna?",
+  'guide.EMERGENCY': "Gå dit direkt. Någon behöver hjälp.",
+  'guide.alert': "Gästerna vill något: titta till bordet.",
+  'guide.WANTS_BILL': "Gästerna vill betala: ta notan.",
+  'guide.DESSERT': "Maten är uppäten: erbjud dessert eller kaffe.",
+  'guide.food': "Maten är klar i köket: bär ut den.",
+  'guide.OCCUPIED': "Gäster sitter här och allt är lugnt.",
+  'guide.AVAILABLE': "Bordet är ledigt och dukat.",
+  'guide.BLIND': "Kameran ser inte bordet just nu: håll koll själv.",
 } as const;
 
 export type Key = keyof typeof sv;

@@ -445,6 +445,18 @@ const ko: Dict = {
   'off.text': "매장 주인이 이 기능을 껐습니다. 설정 → 기능 사용자 지정에서 다시 켤 수 있습니다.",
   'off.link': "기능 사용자 지정",
   'gate.progress': "4단계 중 {n}단계 완료",
+  'guide.title': "색상 보는 법",
+  'guide.intro': "각 테이블은 손님에게 필요한 것에 따라 색이 바뀝니다. 가장 급한 것이 맨 위에 있습니다.",
+  'guide.ok': "알겠습니다",
+  'guide.open': "색상은 무슨 뜻인가요?",
+  'guide.EMERGENCY': "바로 가세요. 도움이 필요한 사람이 있습니다.",
+  'guide.alert': "손님이 무언가를 원합니다: 테이블을 확인하세요.",
+  'guide.WANTS_BILL': "손님이 계산을 원합니다: 계산서를 가져가세요.",
+  'guide.DESSERT': "식사가 끝났습니다: 디저트나 커피를 권하세요.",
+  'guide.food': "주방에서 음식이 준비되었습니다: 서빙하세요.",
+  'guide.OCCUPIED': "손님이 앉아 있고 모두 괜찮습니다.",
+  'guide.AVAILABLE': "테이블이 비어 있고 세팅되어 있습니다.",
+  'guide.BLIND': "지금 카메라가 테이블을 보지 못합니다: 직접 살펴보세요.",
 };
 
 export default ko;

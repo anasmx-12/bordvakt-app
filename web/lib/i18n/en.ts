@@ -445,6 +445,18 @@ const en: Dict = {
   'off.text': "The restaurant owner has turned it off. It can be turned on again under Settings → Customize features.",
   'off.link': "Customize features",
   'gate.progress': "{n} of 4 steps done",
+  'guide.title': "How to read the colours",
+  'guide.intro': "Each table gets a colour based on what the guests need. The most urgent is at the top.",
+  'guide.ok': "Got it",
+  'guide.open': "What do the colours mean?",
+  'guide.EMERGENCY': "Go there right away. Someone needs help.",
+  'guide.alert': "The guests want something: check on the table.",
+  'guide.WANTS_BILL': "The guests want to pay: bring the bill.",
+  'guide.DESSERT': "The food is finished: offer dessert or coffee.",
+  'guide.food': "The food is ready in the kitchen: take it out.",
+  'guide.OCCUPIED': "Guests are seated and everything is fine.",
+  'guide.AVAILABLE': "The table is free and set.",
+  'guide.BLIND': "The camera can't see the table right now: keep an eye on it yourself.",
 };
 
 export default en;

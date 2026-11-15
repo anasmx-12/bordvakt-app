@@ -445,6 +445,18 @@ const es: Dict = {
   'off.text': "El propietario la ha desactivado. Puede activarse en Ajustes → Personalizar funciones.",
   'off.link': "Personalizar funciones",
   'gate.progress': "{n} de 4 pasos listos",
+  'guide.title': "Cómo leer los colores",
+  'guide.intro': "Cada mesa recibe un color según lo que necesitan los clientes. Lo más urgente va arriba.",
+  'guide.ok': "Entendido",
+  'guide.open': "¿Qué significan los colores?",
+  'guide.EMERGENCY': "Ve ahora mismo. Alguien necesita ayuda.",
+  'guide.alert': "Los clientes quieren algo: acércate a la mesa.",
+  'guide.WANTS_BILL': "Los clientes quieren pagar: lleva la cuenta.",
+  'guide.DESSERT': "Han terminado de comer: ofrece postre o café.",
+  'guide.food': "La comida está lista en cocina: llévala a la mesa.",
+  'guide.OCCUPIED': "Hay clientes sentados y todo va bien.",
+  'guide.AVAILABLE': "La mesa está libre y puesta.",
+  'guide.BLIND': "La cámara no ve la mesa ahora: vigílala tú.",
 };
 
 export default es;

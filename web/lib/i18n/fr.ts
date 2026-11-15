@@ -445,6 +445,18 @@ const fr: Dict = {
   'off.text': "Le propriétaire l'a désactivée. Réactivable dans Réglages → Personnaliser les fonctionnalités.",
   'off.link': "Personnaliser les fonctionnalités",
   'gate.progress': "{n} étapes sur 4 terminées",
+  'guide.title': "Comment lire les couleurs",
+  'guide.intro': "Chaque table prend une couleur selon ce dont les clients ont besoin. Le plus urgent est en haut.",
+  'guide.ok': "Compris",
+  'guide.open': "Que signifient les couleurs ?",
+  'guide.EMERGENCY': "Allez-y tout de suite. Quelqu'un a besoin d'aide.",
+  'guide.alert': "Les clients veulent quelque chose : passez voir la table.",
+  'guide.WANTS_BILL': "Les clients veulent payer : apportez l'addition.",
+  'guide.DESSERT': "Le repas est terminé : proposez un dessert ou un café.",
+  'guide.food': "Le plat est prêt en cuisine : servez-le.",
+  'guide.OCCUPIED': "Des clients sont installés et tout va bien.",
+  'guide.AVAILABLE': "La table est libre et dressée.",
+  'guide.BLIND': "La caméra ne voit pas la table pour l'instant : surveillez-la vous-même.",
 };
 
 export default fr;

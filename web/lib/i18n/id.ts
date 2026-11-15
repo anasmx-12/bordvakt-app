@@ -445,6 +445,18 @@ const id: Dict = {
   'off.text': "Pemilik restoran mematikannya. Bisa diaktifkan lagi di Pengaturan → Sesuaikan fitur.",
   'off.link': "Sesuaikan fitur",
   'gate.progress': "{n} dari 4 langkah selesai",
+  'guide.title': "Cara membaca warna",
+  'guide.intro': "Setiap meja diberi warna sesuai kebutuhan tamu. Yang paling mendesak ada di atas.",
+  'guide.ok': "Mengerti",
+  'guide.open': "Apa arti warnanya?",
+  'guide.EMERGENCY': "Segera ke sana. Ada yang butuh bantuan.",
+  'guide.alert': "Tamu menginginkan sesuatu: cek mejanya.",
+  'guide.WANTS_BILL': "Tamu ingin membayar: bawakan tagihannya.",
+  'guide.DESSERT': "Makanan sudah habis: tawarkan hidangan penutup atau kopi.",
+  'guide.food': "Makanan sudah siap di dapur: antarkan.",
+  'guide.OCCUPIED': "Tamu sudah duduk dan semuanya baik.",
+  'guide.AVAILABLE': "Meja kosong dan sudah ditata.",
+  'guide.BLIND': "Kamera tidak melihat meja saat ini: awasi sendiri.",
 };
 
 export default id;

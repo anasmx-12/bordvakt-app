@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { Loader2, Map as MapIcon } from 'lucide-react';
-import { STATUS_STYLE } from '@/lib/types';
 import { DiningTable } from '@/lib/types';
 import { ActiveFloorPlan } from '@/lib/useFloorPlan';
 import FloorPlan from './FloorPlan';
 import Banner from './Banner';
 import TableGrid from './TableGrid';
-import { Key, translateIssue, useT } from '@/lib/i18n';
+import ColorGuide from './ColorGuide';
+import { translateIssue, useT } from '@/lib/i18n';
 
 interface Props {
   plan: ActiveFloorPlan | null | undefined;
@@ -23,16 +23,6 @@ interface Props {
   cookingByTable: Map<string, number>;
 }
 
-const LEGEND: { label: Key; className: string }[] = [
-  { label: 'status.EMERGENCY', className: 'bg-red-800 ring-2 ring-red-400' },
-  { label: 'map.legendAlert', className: 'bg-red-500' },
-  { label: 'status.WANTS_BILL', className: 'bg-violet-600' },
-  { label: 'status.DESSERT_OPPORTUNITY', className: 'bg-dessert' },
-  { label: 'map.legendFoodReady', className: 'bg-teal' },
-  { label: 'status.OCCUPIED', className: 'bg-blue-100 border border-blue-300' },
-  { label: 'status.AVAILABLE', className: 'bg-teal-light border border-[#7DBDB4]' },
-  { label: 'status.CAMERA_BLIND', className: STATUS_STYLE.CAMERA_BLIND.table },
-];
 
 export default function DiningRoomMap({
   plan,
@@ -122,14 +112,7 @@ export default function DiningRoomMap({
         }))}
       />
 
-      <ul className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-line-soft pt-3">
-        {LEGEND.map((item) => (
-          <li key={item.label} className="flex items-center gap-1.5 text-xs text-muted">
-            <span className={`h-3 w-3 rounded-[4px] ${item.className}`} />
-            {t(item.label)}
-          </li>
-        ))}
-      </ul>
+      <ColorGuide />
 
       {notOnPlan.length > 0 && (
         <p className="text-xs text-muted">

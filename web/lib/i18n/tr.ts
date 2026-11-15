@@ -445,6 +445,18 @@ const tr: Dict = {
   'off.text': "Restoran sahibi kapattı. Ayarlar → Özellikleri özelleştir bölümünden açılabilir.",
   'off.link': "Özellikleri özelleştir",
   'gate.progress': "4 adımdan {n} tanesi tamam",
+  'guide.title': "Renkler ne anlama geliyor",
+  'guide.intro': "Her masa, misafirlerin ihtiyacına göre bir renk alır. En acil olan en üsttedir.",
+  'guide.ok': "Anladım",
+  'guide.open': "Renkler ne anlama geliyor?",
+  'guide.EMERGENCY': "Hemen gidin. Birinin yardıma ihtiyacı var.",
+  'guide.alert': "Misafirler bir şey istiyor: masaya bakın.",
+  'guide.WANTS_BILL': "Misafirler ödemek istiyor: hesabı götürün.",
+  'guide.DESSERT': "Yemek bitti: tatlı ya da kahve önerin.",
+  'guide.food': "Yemek mutfakta hazır: servis edin.",
+  'guide.OCCUPIED': "Misafirler oturuyor ve her şey yolunda.",
+  'guide.AVAILABLE': "Masa boş ve hazır.",
+  'guide.BLIND': "Kamera şu an masayı görmüyor: kendiniz takip edin.",
 };
 
 export default tr;

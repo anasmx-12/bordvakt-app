@@ -445,6 +445,18 @@ const zh: Dict = {
   'off.text': "餐厅老板已关闭此功能，可在“设置 → 自定义功能”中重新开启。",
   'off.link': "自定义功能",
   'gate.progress': "已完成 {n}/4 步",
+  'guide.title': "颜色说明",
+  'guide.intro': "每张桌子会根据客人的需要显示颜色。最紧急的在最上面。",
+  'guide.ok': "知道了",
+  'guide.open': "颜色是什么意思？",
+  'guide.EMERGENCY': "立即前往。有人需要帮助。",
+  'guide.alert': "客人需要服务：去看看这张桌子。",
+  'guide.WANTS_BILL': "客人想结账：送上账单。",
+  'guide.DESSERT': "已经吃完：推荐甜点或咖啡。",
+  'guide.food': "厨房菜已做好：端出去。",
+  'guide.OCCUPIED': "有客人就座，一切正常。",
+  'guide.AVAILABLE': "桌子空闲且已摆好。",
+  'guide.BLIND': "摄像头目前看不到这张桌子：请自行留意。",
 };
 
 export default zh;

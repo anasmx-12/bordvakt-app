@@ -445,6 +445,18 @@ const de: Dict = {
   'off.text': "Der Inhaber hat sie ausgeschaltet. Unter Einstellungen → Funktionen anpassen lässt sie sich wieder einschalten.",
   'off.link': "Funktionen anpassen",
   'gate.progress': "{n} von 4 Schritten erledigt",
+  'guide.title': "So liest du die Farben",
+  'guide.intro': "Jeder Tisch bekommt eine Farbe je nachdem, was die Gäste brauchen. Das Dringendste steht oben.",
+  'guide.ok': "Verstanden",
+  'guide.open': "Was bedeuten die Farben?",
+  'guide.EMERGENCY': "Sofort hingehen. Jemand braucht Hilfe.",
+  'guide.alert': "Die Gäste wollen etwas: am Tisch nachsehen.",
+  'guide.WANTS_BILL': "Die Gäste wollen zahlen: Rechnung bringen.",
+  'guide.DESSERT': "Das Essen ist aufgegessen: Dessert oder Kaffee anbieten.",
+  'guide.food': "Das Essen ist in der Küche fertig: raustragen.",
+  'guide.OCCUPIED': "Gäste sitzen hier und alles ist ruhig.",
+  'guide.AVAILABLE': "Der Tisch ist frei und gedeckt.",
+  'guide.BLIND': "Die Kamera sieht den Tisch gerade nicht: selbst im Blick behalten.",
 };
 
 export default de;
