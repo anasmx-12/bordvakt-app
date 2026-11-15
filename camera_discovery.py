@@ -7,14 +7,21 @@ Lösenord skrivs aldrig ut och står aldrig i felmeddelanden.
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import ipaddress
+import os
 import re
 import socket
 import time
 import uuid
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
-from urllib.parse import quote
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
+from urllib.parse import quote, urlsplit, urlunsplit
+from xml.sax.saxutils import escape
 
 # ------------------------------------------------------------- Märken
 # Samma sökvägar som web/lib/cameras.ts (kanal 1 = första kameran på en inspelare)
@@ -230,3 +237,125 @@ def discover(timeout: float = 3.0, probe=None, scan=None) -> list[dict]:
         cam = cameras.setdefault(ip, {"ip": ip, "onvif_url": None, "ports": [], "brand": None, "model": None})
         cam["ports"] = sorted(set(cam["ports"]) | set(open_ports))
     return sorted(cameras.values(), key=lambda c: tuple(int(x) for x in c["ip"].split(".")))
+
+
+# ------------------------------------------------------------- ONVIF
+# Kameran berättar själv vilket märke och vilken modell den är, och exakt vilken videoadress den har.
+
+class AuthError(Exception):
+    """Fel användarnamn eller lösenord."""
+
+
+def wsse_header(user: str, password: str, nonce: bytes, created: str) -> str:
+    """WS-UsernameToken (PasswordDigest = base64(sha1(nonce + created + lösenord)))."""
+    digest = base64.b64encode(hashlib.sha1(nonce + created.encode() + password.encode()).digest()).decode()
+    return (
+        '<s:Header><wsse:Security s:mustUnderstand="1" '
+        'xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" '
+        'xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">'
+        f"<wsse:UsernameToken><wsse:Username>{escape(user)}</wsse:Username>"
+        '<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">'
+        f"{digest}</wsse:Password>"
+        '<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">'
+        f"{base64.b64encode(nonce).decode()}</wsse:Nonce>"
+        f"<wsu:Created>{created}</wsu:Created></wsse:UsernameToken></wsse:Security></s:Header>"
+    )
+
+
+def _envelope(user: str, password: str, body: str) -> str:
+    created = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" '
+        'xmlns:tds="http://www.onvif.org/ver10/device/wsdl" xmlns:trt="http://www.onvif.org/ver10/media/wsdl" '
+        'xmlns:tt="http://www.onvif.org/ver10/schema">'
+        f"{wsse_header(user, password, os.urandom(16), created)}<s:Body>{body}</s:Body></s:Envelope>"
+    )
+
+
+def _find(xml: str, name: str) -> list[ET.Element]:
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError:
+        return []
+    return [el for el in root.iter() if _local(el.tag) == name]
+
+
+def _text(el: ET.Element, name: str) -> str | None:
+    for child in el.iter():
+        if _local(child.tag) == name and child.text:
+            return child.text.strip()
+    return None
+
+
+def parse_device_info(xml: str) -> tuple[str | None, str | None]:
+    found = _find(xml, "GetDeviceInformationResponse")
+    if not found:
+        return None, None
+    return _text(found[0], "Manufacturer"), _text(found[0], "Model")
+
+
+def parse_profiles(xml: str) -> list[str]:
+    """En profil per videokälla (en kamera), den med högst upplösning."""
+    best: dict[str, tuple[int, str]] = {}
+    order: list[str] = []
+    for i, prof in enumerate(_find(xml, "Profiles")):
+        token = prof.get("token")
+        if not token:
+            continue
+        source = _text(prof, "SourceToken") or f"_{i}"
+        width = int(_text(prof, "Width") or 0)
+        if source not in best:
+            order.append(source)
+        if source not in best or width > best[source][0]:
+            best[source] = (width, token)
+    return [best[s][1] for s in order]
+
+
+def parse_stream_uri(xml: str) -> str | None:
+    found = _find(xml, "Uri")
+    return found[0].text.strip() if found and found[0].text else None
+
+
+def with_credentials(url: str, user: str, password: str) -> str:
+    parts = urlsplit(url)
+    host = parts.hostname or ""
+    netloc = f"{quote(user, safe='')}:{quote(password, safe='')}@{host}" + (f":{parts.port}" if parts.port else "")
+    return urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
+
+
+def _http_post(url: str, body: str) -> tuple[int, str]:
+    req = urllib.request.Request(url, data=body.encode(), headers={"Content-Type": "application/soap+xml; charset=utf-8"})
+    try:
+        with urllib.request.urlopen(req, timeout=4) as res:
+            return res.status, res.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", "replace")
+
+
+def onvif_streams(onvif_url: str, user: str, password: str, post=None) -> tuple[dict, list[str]]:
+    """Märke, modell och videoadresserna (med inloggning) som kameran själv anger. AuthError vid fel lösenord."""
+    post = post or _http_post
+
+    def call(url: str, body: str) -> str:
+        status, text = post(url, _envelope(user, password, body))
+        if status == 401 or "NotAuthorized" in text:
+            raise AuthError()
+        return text
+
+    manufacturer, model = parse_device_info(call(onvif_url, "<tds:GetDeviceInformation/>"))
+    brand = brand_from_text(f"{model or ''} {manufacturer or ''}")[0]
+    caps = _find(call(onvif_url, '<tds:GetCapabilities><tds:Category>Media</tds:Category></tds:GetCapabilities>'), "Media")
+    media_url = (_text(caps[0], "XAddr") if caps else None) or onvif_url
+    if urlsplit(media_url).hostname != urlsplit(onvif_url).hostname:
+        media_url = onvif_url  # lösenordet skickas bara till kameran själv
+    urls: list[str] = []
+    for token in parse_profiles(call(media_url, "<trt:GetProfiles/>")):
+        uri = parse_stream_uri(call(media_url,
+            "<trt:GetStreamUri><trt:StreamSetup><tt:Stream>RTP-Unicast</tt:Stream><tt:Transport><tt:Protocol>RTSP</tt:Protocol>"
+            f"</tt:Transport></trt:StreamSetup><trt:ProfileToken>{escape(token)}</trt:ProfileToken></trt:GetStreamUri>"))
+        if uri and uri.lower().startswith("rtsp"):
+            full = with_credentials(uri, user, password)
+            if full not in urls:
+                urls.append(full)
+    return {"brand": brand, "model": model}, urls

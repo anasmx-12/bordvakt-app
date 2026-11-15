@@ -1,5 +1,7 @@
 """Tester för kameraguiden (camera_discovery.py). Kör: .venv/bin/python -m unittest discover -s tests"""
 
+import base64
+import hashlib
 import os
 import sys
 import unittest
@@ -108,6 +110,107 @@ class DiscoverTest(unittest.TestCase):
     def test_sorted_numerically(self):
         found = cd.discover(probe=lambda t: [], scan=lambda: {"192.168.1.100": [554], "192.168.1.9": [554]})
         self.assertEqual([d["ip"] for d in found], ["192.168.1.9", "192.168.1.100"])
+
+
+ENV = '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:tds="http://www.onvif.org/ver10/device/wsdl" xmlns:trt="http://www.onvif.org/ver10/media/wsdl" xmlns:tt="http://www.onvif.org/ver10/schema"><s:Body>{}</s:Body></s:Envelope>'
+DEVICE_INFO_XML = ENV.format("<tds:GetDeviceInformationResponse><tds:Manufacturer>HIKVISION</tds:Manufacturer>"
+                             "<tds:Model>DS-2CD2143G2-I</tds:Model></tds:GetDeviceInformationResponse>")
+CAPABILITIES_XML = ENV.format("<tds:GetCapabilitiesResponse><tds:Capabilities><tt:Media><tt:XAddr>"
+                              "http://192.168.1.64/onvif/Media</tt:XAddr></tt:Media></tds:Capabilities></tds:GetCapabilitiesResponse>")
+def profile(token, source, width):
+    return (f'<trt:Profiles token="{token}"><tt:VideoSourceConfiguration><tt:SourceToken>{source}</tt:SourceToken>'
+            f'</tt:VideoSourceConfiguration><tt:VideoEncoderConfiguration><tt:Resolution><tt:Width>{width}</tt:Width>'
+            f'<tt:Height>{width * 9 // 16}</tt:Height></tt:Resolution></tt:VideoEncoderConfiguration></trt:Profiles>')
+
+
+# En kamera: huvudström och delström från samma videokälla
+PROFILES_XML_TWO = ENV.format("<trt:GetProfilesResponse>" + profile("Profile_2", "VideoSource_1", 640)
+                              + profile("Profile_1", "VideoSource_1", 2560) + "</trt:GetProfilesResponse>")
+# En inspelare: två kameror (två videokällor)
+PROFILES_XML_NVR = ENV.format("<trt:GetProfilesResponse>" + profile("A", "VideoSource_1", 1920)
+                              + profile("B", "VideoSource_2", 1920) + "</trt:GetProfilesResponse>")
+STREAM_URI_XML = ENV.format("<trt:GetStreamUriResponse><trt:MediaUri><tt:Uri>rtsp://192.168.1.64:554/Streaming/Channels/101"
+                            "</tt:Uri></trt:MediaUri></trt:GetStreamUriResponse>")
+
+
+class WsseTest(unittest.TestCase):
+    def test_digest_matches_onvif_spec(self):
+        h = cd.wsse_header("admin", "12345", b"\x00" * 16, "2026-11-15T10:00:00Z")
+        expected = base64.b64encode(hashlib.sha1(b"\x00" * 16 + b"2026-11-15T10:00:00Z12345").digest()).decode()
+        self.assertIn(expected, h)
+        self.assertIn("<wsse:Username>admin</wsse:Username>", h)
+
+    def test_xml_special_chars_in_user_are_escaped(self):
+        self.assertNotIn("<&", cd.wsse_header("<&", "pw", b"\x01" * 16, "2026-11-15T10:00:00Z"))
+
+
+class OnvifParseTest(unittest.TestCase):
+    def test_device_info(self):
+        self.assertEqual(cd.parse_device_info(DEVICE_INFO_XML), ("HIKVISION", "DS-2CD2143G2-I"))
+
+    def test_profiles_best_per_source(self):
+        self.assertEqual(cd.parse_profiles(PROFILES_XML_TWO), ["Profile_1"])
+
+    def test_profiles_nvr(self):
+        self.assertEqual(cd.parse_profiles(PROFILES_XML_NVR), ["A", "B"])
+
+    def test_stream_uri(self):
+        self.assertEqual(cd.parse_stream_uri(STREAM_URI_XML), "rtsp://192.168.1.64:554/Streaming/Channels/101")
+
+    def test_with_credentials_replaces_existing(self):
+        self.assertEqual(cd.with_credentials("rtsp://old:x@10.0.0.2:554/a?b=1", "admin", "p@ss"),
+                         "rtsp://admin:p%40ss@10.0.0.2:554/a?b=1")
+
+
+class OnvifStreamsTest(unittest.TestCase):
+    def post(self, uris, profiles=PROFILES_XML_NVR):
+        replies = {"GetDeviceInformation": DEVICE_INFO_XML, "GetCapabilities": CAPABILITIES_XML, "GetProfiles": profiles}
+        calls = iter(uris)
+
+        def post(url, body):
+            if "GetStreamUri" in body:
+                return 200, ENV.format(f"<trt:GetStreamUriResponse><trt:MediaUri><tt:Uri>{next(calls)}</tt:Uri></trt:MediaUri></trt:GetStreamUriResponse>")
+            return 200, next(v for k, v in replies.items() if k in body)
+        return post
+
+    def test_streams_and_model(self):
+        info, urls = cd.onvif_streams("http://192.168.1.64/onvif/device_service", "admin", "p@ss",
+                                      post=self.post(["rtsp://192.168.1.64:554/Streaming/Channels/101",
+                                                      "rtsp://192.168.1.64:554/Streaming/Channels/201"]))
+        self.assertEqual(info, {"brand": "hikvision", "model": "DS-2CD2143G2-I"})
+        self.assertEqual(urls[0], "rtsp://admin:p%40ss@192.168.1.64:554/Streaming/Channels/101")
+        self.assertEqual(len(urls), 2)
+
+    def test_duplicate_paths_counted_once(self):
+        same = "rtsp://192.168.1.64:554/Streaming/Channels/101"
+        _, urls = cd.onvif_streams("http://192.168.1.64/onvif/device_service", "admin", "pw", post=self.post([same, same]))
+        self.assertEqual(len(urls), 1)
+
+    def test_wrong_password(self):
+        with self.assertRaises(cd.AuthError):
+            cd.onvif_streams("http://192.168.1.64/onvif/device_service", "admin", "x", post=lambda u, b: (401, ""))
+
+    def test_media_address_on_other_host_is_ignored(self):
+        evil = ENV.format("<tds:GetCapabilitiesResponse><tds:Capabilities><tt:Media><tt:XAddr>"
+                          "http://203.0.113.9/onvif/Media</tt:XAddr></tt:Media></tds:Capabilities></tds:GetCapabilitiesResponse>")
+        hosts = []
+
+        def post(url, body):
+            hosts.append(url.split("/")[2])
+            if "GetCapabilities" in body:
+                return 200, evil
+            if "GetProfiles" in body:
+                return 200, PROFILES_XML_TWO
+            if "GetStreamUri" in body:
+                return 200, STREAM_URI_XML
+            return 200, DEVICE_INFO_XML
+        cd.onvif_streams("http://192.168.1.64/onvif/device_service", "admin", "pw", post=post)
+        self.assertEqual(set(hosts), {"192.168.1.64"})
+
+    def test_not_authorized_fault(self):
+        fault = ENV.format("<s:Fault><s:Code><s:Subcode><s:Value>ter:NotAuthorized</s:Value></s:Subcode></s:Code></s:Fault>")
+        with self.assertRaises(cd.AuthError):
+            cd.onvif_streams("http://192.168.1.64/onvif/device_service", "admin", "x", post=lambda u, b: (400, fault))
 
 
 if __name__ == "__main__":
