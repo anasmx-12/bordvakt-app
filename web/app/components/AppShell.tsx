@@ -12,6 +12,7 @@ import { useT, type Key } from '@/lib/i18n';
 import Logo from './Logo';
 import SetupChat from './SetupChat';
 import SetupGate from './SetupGate';
+import SupportAccessBanner from './SupportAccessBanner';
 
 // Sidor som inte fungerar förrän installationen är klar
 const NEEDS_SETUP = new Set(['/matsal', '/kitchen']);
@@ -137,6 +138,7 @@ export default function AppShell({ title, subtitle, actions, children }: Props) 
         </div>
 
         <main className="app-zoom mx-auto w-full max-w-[1320px] flex-1 px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-10 lg:pt-8">
+          <SupportAccessBanner />
           <header className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 lg:mb-6">
             <div className="min-w-0">
               <h1 className="font-display text-[26px] font-bold leading-tight tracking-[-0.02em] sm:text-[30px]">

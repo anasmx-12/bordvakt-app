@@ -4,6 +4,7 @@ import * as auth from '@/lib/desk/auth';
 import * as tickets from '@/lib/desk/tickets';
 import * as customers from '@/lib/desk/customers';
 import * as staff from '@/lib/desk/staff';
+import * as access from '@/lib/desk/access';
 
 // /api/desk/... — supportsajtens enda väg in (se lib/desk/gate.ts).
 // Det som inte står i listan nedan finns inte. Varje rad säger vilken behörighet som krävs:
@@ -39,6 +40,8 @@ const ROUTES: [method: string, path: string, level: Level, run: Handler][] = [
   ['POST', 'customers/:id/reset-password', 'staff', (c, r, id) => customers.resetPassword(c, r.input, id)],
   ['POST', 'customers/:id/approve-card', 'staff', (c, r, id) => customers.approveCard(c, r.input, id)],
   ['POST', 'customers/:id/trial', 'staff', (c, r, id) => customers.extendTrial(c, r.input, id)],
+  ['POST', 'customers/:id/access-request', 'staff', (c, r, id) => access.requestAccess(c, r.input, id)],
+  ['GET', 'customers/:id/app', 'staff', (c, r, id) => access.customerApp(c, r.url, id)],
   ['POST', 'customers/:id/exempt', 'admin', (c, r, id) => customers.exempt(c, r.input, id)],
   ['POST', 'customers/:id/delete', 'admin', (c, r, id) => customers.deleteCustomer(c, r.input, id)],
 

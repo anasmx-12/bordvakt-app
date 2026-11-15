@@ -5,6 +5,7 @@ import { sendMail } from '@/lib/mail';
 import { stripe } from '@/lib/billing';
 import { safeEngineUrl } from '@/lib/engine';
 import { sharedRateLimit } from '@/lib/rateLimit';
+import { accessSummary } from './access';
 import { audit, customerSite, DeskContext, isUuid, text } from './gate';
 
 // Supportens kunder: sök, visa och de åtgärder supporten får göra. Supporten ser aldrig
@@ -29,6 +30,9 @@ async function loadRestaurant(id: unknown): Promise<Restaurant> {
   return data as unknown as Restaurant;
 }
 
+/** Spärrat just nu? Supabase sparar ett datum; ett passerat datum betyder inte spärrat. */
+const bannedNow = (until: string | null | undefined) => (until && new Date(until).getTime() > Date.now() ? until : null);
+
 /** Restaurangens konton (inte AI-datorns). */
 async function restaurantPeople(restaurantId: string) {
   const db = serverSupabase();
@@ -48,6 +52,8 @@ async function restaurantPeople(restaurantId: string) {
       card_name_mismatch: typeof meta.card_name_mismatch === 'string' ? meta.card_name_mismatch : null,
       card_name_approved: typeof meta.card_name_approved === 'string' ? meta.card_name_approved : null,
       last_sign_in_at: u.last_sign_in_at ?? null,
+      banned_until: bannedNow((u as { banned_until?: string | null }).banned_until),
+      reset_pending_until: null as string | null,
     });
   }
   return people;
@@ -89,15 +95,29 @@ export async function listCustomers(ctx: DeskContext, url: URL) {
 /** GET customers/:id — kunden, dess konton, ärenden och om AI-datorn svarar. */
 export async function getCustomer(ctx: DeskContext, _url: URL, id: string) {
   const r = await loadRestaurant(id);
-  const [people, online, { data: tickets }] = await Promise.all([
+  const db = serverSupabase();
+  const [people, online, { data: tickets }, access] = await Promise.all([
     restaurantPeople(r.id),
     engineOnline(r.engine_url),
-    serverSupabase().from('support_tickets').select('id, number, topic, status, created_at').eq('restaurant_id', r.id).order('created_at', { ascending: false }).limit(20),
+    db.from('support_tickets').select('id, number, topic, status, created_at').eq('restaurant_id', r.id).order('created_at', { ascending: false }).limit(20),
+    accessSummary(r.id),
   ]);
+  // Har supporten skickat en länk för nytt lösenord som inte är använd än?
+  if (people.length) {
+    const { data: resets } = await db
+      .from('password_resets')
+      .select('user_id, expires_at')
+      .in('user_id', people.map((p) => p.id))
+      .gt('expires_at', new Date().toISOString());
+    for (const reset of resets ?? []) {
+      const person = people.find((p) => p.id === reset.user_id);
+      if (person) person.reset_pending_until = reset.expires_at;
+    }
+  }
   await audit(ctx, ctx.staff, 'customer_view', { type: 'restaurant', id: r.id }, { name: r.name });
   const { engine_url: _engine, ...restaurant } = r;
   void _engine;
-  return { restaurant, people, online, tickets: tickets ?? [] };
+  return { restaurant, people, online, tickets: tickets ?? [], access };
 }
 
 /** POST customers/:id/approve-card { userId, note } — godkänner kortnamnet efter kontroll av legitimationen.
