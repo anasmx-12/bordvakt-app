@@ -12,6 +12,8 @@ interface Access {
   expires: number;
 }
 let access: Access | null = null;
+/** Restaurangen har ingen AI-dator kopplad (svaret från /api/engine/access). */
+let notPaired = false;
 
 function localBase(configured: string) {
   const url = new URL(configured);
@@ -27,6 +29,8 @@ async function getAccess(): Promise<Access | null> {
     const res = await fetch('/api/engine/access', { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
+    notPaired = data.paired === false;
+    if (notPaired) return null;
     access = { base: localBase(data.base), token: data.token, expires: data.expires };
     return access;
   } catch {
@@ -43,6 +47,8 @@ export function streamUrl(engine: EngineStatus | null, cameraId: string, extra =
 export interface EngineStatus {
   /** false = AI-motorn (AI.py) svarar inte */
   reachable: boolean;
+  /** false = restaurangen har ingen AI-dator kopplad (Inställningar → AI-datorn) */
+  paired: boolean;
   aiEnabled: boolean;
   aiDisabledReason: string | null;
   /** false = installationen (planritning, kameror, kalibrering) är inte klar */
@@ -76,6 +82,7 @@ async function check() {
     const data = await res.json();
     next = {
       reachable: true,
+      paired: true,
       aiEnabled: Boolean(data.ai_enabled),
       aiDisabledReason: data.ai_disabled_reason ?? null,
       setupComplete: Boolean(data.setup_complete),
@@ -84,7 +91,7 @@ async function check() {
       token: a.token,
     };
   } catch {
-    next = { reachable: false, aiEnabled: false, aiDisabledReason: null, setupComplete: false, cameras: {}, base: null, token: null };
+    next = { reachable: false, paired: !notPaired, aiEnabled: false, aiDisabledReason: null, setupComplete: false, cameras: {}, base: null, token: null };
   }
   if (listeners.size === 0) return;
   current = next;
@@ -119,6 +126,7 @@ export function monitoringProblem(
   t: TFunction = (key) => translate('sv', key)
 ): string | null {
   if (!engine) return t('mon.checking');
+  if (!engine.paired) return t('mon.notPaired');
   if (!engine.reachable) return t('mon.engineOff');
   if (!cameraId || !engine.cameras[cameraId]?.online) return t('mon.cameraOff');
   if (!engine.setupComplete) return t('mon.setup');

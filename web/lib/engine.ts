@@ -44,12 +44,28 @@ export function safeEngineUrl(raw: unknown): string | null {
 
 const urlCache = new Map<string, { at: number; url: string }>();
 
-/** Adressen till restaurangens AI-motor. */
+/** Restaurangen har ingen AI-dator kopplad (Inställningar → AI-datorn). */
+export const NO_ENGINE = 'Ingen AI-dator är kopplad till restaurangen än. Koppla den under Inställningar → AI-datorn.';
+
+/** Adressen till restaurangens AI-motor. Kastar 409 (NO_ENGINE) om ingen dator är kopplad:
+ *  då får webbappen inte låna en annan restaurangs motor på samma adress. */
 export async function engineUrl(restaurantId: string): Promise<string> {
   const hit = urlCache.get(restaurantId);
   if (hit && Date.now() - hit.at < 15_000) return hit.url;
-  const { data } = await serverSupabase().from('restaurants').select('engine_url').eq('id', restaurantId).maybeSingle();
-  const url = safeEngineUrl(data?.engine_url) ?? FALLBACK_URL;
+  const db = serverSupabase();
+  const { data } = await db.from('restaurants').select('engine_url').eq('id', restaurantId).maybeSingle();
+  let url = safeEngineUrl(data?.engine_url);
+  if (!url) {
+    // Ingen tunneladress sparad (t.ex. ENGINE_TUNNEL=off under utveckling): reservadressen
+    // används bara om restaurangen faktiskt har en kopplad AI-dator
+    const { count } = await db
+      .from('restaurant_members')
+      .select('user_id', { count: 'exact', head: true })
+      .eq('restaurant_id', restaurantId)
+      .eq('role', 'engine');
+    if (!count) throw new UserError(NO_ENGINE, 409);
+    url = FALLBACK_URL;
+  }
   urlCache.set(restaurantId, { at: Date.now(), url });
   return url;
 }

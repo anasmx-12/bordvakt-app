@@ -145,6 +145,7 @@ const sv = {
   // Varför bordens status inte visas
   'mon.checking': 'Kontrollerar kameran…',
   'mon.engineOff': 'Bordskartan kan inte visas eftersom kameran inte är ansluten. AI-motorn är inte igång.',
+  'mon.notPaired': 'Ingen AI-dator är kopplad till restaurangen än. Koppla den under Inställningar → AI-datorn.',
   'mon.cameraOff': 'Bordskartan kan inte visas eftersom kameran inte är ansluten.',
   'mon.setup': 'Installationen är inte klar. Gör klart guiden under Installation så startar bevakningen.',
   'mon.aiOff': 'Kameran är ansluten, men AI-analysen är avstängd. Bordens status kan därför inte visas.',
@@ -183,7 +184,7 @@ const sv = {
   'set.sosStats': '{real} riktiga olyckor, {false} falsklarm ({pct} % träffsäkerhet)',
   'set.sosNone': 'Inga SOS de senaste 30 dagarna.',
   'set.sosNeeds008': 'Kör supabase/008_sos_details.sql i Supabase för att se träffsäkerheten.',
-  'set.sosLearn': 'Tryck Falsklarm när AI:n larmat fel. Vid bord med flera falsklarm kräver den sedan ett extra tecken innan den larmar.',
+  'set.sosLearn': 'Tryck Falsklarm när AI:n larmat fel, på SOS och på Vill ha hjälp. Vid bord med flera falsklarm är AI:n sedan försiktigare innan den larmar.',
 
   // Köket
   'kitchen.title': 'Köket',

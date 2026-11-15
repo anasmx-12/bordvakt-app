@@ -315,7 +315,8 @@ class StreamHandler(BaseHTTPRequestHandler):
         """Anropas av Next.js-servern (inte av webbläsaren) och kräver motorns nyckel."""
         path = self.path.split("?")[0]
         if not self.server_call():
-            self.send_json(403, {"error": "AI-motorn kräver service-nyckeln i både .env och web/.env.local."})
+            self.send_json(403, {"error": "Den här AI-datorn är kopplad till en annan restaurang (eller till en gammal kopplingskod). "
+                                          "Skapa en ny kopplingskod under Inställningar → AI-datorn och koppla datorn igen."})
             return
         if path == "/chat":
             self.chat()  # behöver inte kamera-AI:n
