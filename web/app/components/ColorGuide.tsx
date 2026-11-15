@@ -28,17 +28,19 @@ function seen() {
 }
 
 /** Legenden under kartan, med en "?"-knapp. Första gången på en enhet öppnas förklaringen av sig själv. */
-export default function ColorGuide() {
+export default function ColorGuide({ autoOpen = true }: { autoOpen?: boolean }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const ok = useRef<HTMLButtonElement>(null);
 
+  // Öppnas av sig själv först när Matsalen går att använda (inte under spärrutan före installationen)
   useEffect(() => {
+    if (!autoOpen) return;
     const timer = setTimeout(() => {
       if (!seen()) setOpen(true);
     }, 600);
     return () => clearTimeout(timer);
-  }, []);
+  }, [autoOpen]);
 
   useEffect(() => {
     if (!open) return;

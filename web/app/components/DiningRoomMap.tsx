@@ -21,6 +21,8 @@ interface Props {
   readyByTable: Map<string, number>;
   /** Bord-id -> antal beställningar som lagas */
   cookingByTable: Map<string, number>;
+  /** Färgförklaringen öppnas själv första gången (bara när installationen är klar) */
+  guideAuto?: boolean;
 }
 
 
@@ -33,6 +35,7 @@ export default function DiningRoomMap({
   onSelectTable,
   readyByTable,
   cookingByTable,
+  guideAuto,
 }: Props) {
   const t = useT();
   if (plan === undefined) {
@@ -112,7 +115,7 @@ export default function DiningRoomMap({
         }))}
       />
 
-      <ColorGuide />
+      <ColorGuide autoOpen={guideAuto} />
 
       {notOnPlan.length > 0 && (
         <p className="text-xs text-muted">

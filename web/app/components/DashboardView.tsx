@@ -254,6 +254,7 @@ export default function DashboardView(p: DashboardViewProps) {
                 onSelectTable={p.onSelectTable}
                 readyByTable={readyByTable}
                 cookingByTable={cookingByTable}
+                guideAuto={p.engine?.setupComplete === true}
               />
             ) : (
               <LiveFeed
