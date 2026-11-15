@@ -10,6 +10,8 @@ import FloorPlanEditor from '../components/FloorPlanEditor';
 import SectionLabel from '../components/SectionLabel';
 import MenuStep from './MenuStep';
 import ExtrasStep from './ExtrasStep';
+import CameraFinder from './CameraFinder';
+import CameraLabel from './CameraLabel';
 import { optInChosen } from '@/lib/features';
 import SupportLink from '../components/SupportLink';
 import { LifeBuoy } from 'lucide-react';
@@ -297,6 +299,7 @@ function CamerasStep({ onDone }: { onDone: () => void }) {
   const [test, setTest] = useState<{ url: string; preview: string | null; warning: string | null } | null>(null);
   const [busy, setBusy] = useState<'test' | 'save' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const manual = useRef<HTMLElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -433,175 +436,184 @@ function CamerasStep({ onDone }: { onDone: () => void }) {
         </button>
       </section>
 
-      <section className="flex flex-col gap-3 card p-5">
-        <SectionLabel>Lägg till kamera</SectionLabel>
-        <label className="field-label">
-          Namn
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="T.ex. Matsal norr" className={input} />
-        </label>
-        <fieldset className="flex flex-col gap-2">
-          <legend className="field-label mb-2">Typ av kamera</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {KINDS.map((k) => (
-              <button
-                key={k.id}
-                type="button"
-                aria-pressed={form.kind === k.id}
-                onClick={() => change({ kind: k.id as CameraKind })}
-                className={`min-h-11 rounded-lg border px-3 py-2 text-start text-[14px] font-semibold transition-colors ${
-                  form.kind === k.id ? 'border-ink bg-ink text-white' : 'border-line bg-white hover:border-ink'
-                }`}
-              >
-                {k.label}
-              </button>
-            ))}
-          </div>
-          <span className="text-xs font-normal text-muted">{kind.hint}</span>
-        </fieldset>
+      <div className="flex flex-col gap-5">
+        <CameraFinder existing={cameras?.length ?? 0} onSaved={load} />
+        <CameraLabel
+          onUseBrand={(b) => {
+            change({ kind: 'ip', brand: b });
+            manual.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        />
+        <section ref={manual} className="flex scroll-mt-20 flex-col gap-3 card p-5">
+          <SectionLabel>Ange adressen själv</SectionLabel>
+          <label className="field-label">
+            Namn
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="T.ex. Matsal norr" className={input} />
+          </label>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="field-label mb-2">Typ av kamera</legend>
+            <div className="grid grid-cols-2 gap-2">
+              {KINDS.map((k) => (
+                <button
+                  key={k.id}
+                  type="button"
+                  aria-pressed={form.kind === k.id}
+                  onClick={() => change({ kind: k.id as CameraKind })}
+                  className={`min-h-11 rounded-lg border px-3 py-2 text-start text-[14px] font-semibold transition-colors ${
+                    form.kind === k.id ? 'border-ink bg-ink text-white' : 'border-line bg-white hover:border-ink'
+                  }`}
+                >
+                  {k.label}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs font-normal text-muted">{kind.hint}</span>
+          </fieldset>
 
-        {(form.kind === 'ip' || form.kind === 'nvr') && (
-          <>
-            <label className="field-label">
-              Märke
-              <select
-                value={form.brand}
-                onChange={(e) => change({ brand: e.target.value as CameraBrand })}
-                className={`${input} bg-white`}
-              >
-                {brands.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.label}
-                  </option>
-                ))}
-              </select>
-              <span className="text-xs font-normal text-muted">{brand.hint}</span>
-            </label>
-
-            {connections.length > 1 && (
+          {(form.kind === 'ip' || form.kind === 'nvr') && (
+            <>
               <label className="field-label">
-                Anslutning
+                Märke
                 <select
-                  value={form.connection}
-                  onChange={(e) => change({ connection: e.target.value as Connection })}
+                  value={form.brand}
+                  onChange={(e) => change({ brand: e.target.value as CameraBrand })}
                   className={`${input} bg-white`}
                 >
-                  {CONNECTIONS.filter((c) => connections.includes(c.id)).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.label}
+                  {brands.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.label}
                     </option>
                   ))}
                 </select>
-                <span className="text-xs font-normal text-muted">
-                  {CONNECTIONS.find((c) => c.id === form.connection)?.hint}
-                </span>
+                <span className="text-xs font-normal text-muted">{brand.hint}</span>
               </label>
-            )}
-          </>
-        )}
 
-        {form.kind === 'usb' ? (
-          <label className="field-label">
-            Kamerans nummer
-            <input
-              value={form.custom}
-              onChange={(e) => set({ custom: e.target.value })}
-              placeholder="0"
-              inputMode="numeric"
-              className={input}
-            />
-            <span className="text-xs font-normal text-muted">0 = datorns inbyggda kamera, 1 = nästa kamera osv.</span>
-          </label>
-        ) : customAddress ? (
-          <label className="field-label">
-            Kamerans adress
-            <input
-              value={form.custom}
-              onChange={(e) => set({ custom: e.target.value })}
-              placeholder={
-                form.brand === 'unifi'
-                  ? 'rtsps://192.168.1.1:7441/abc123?enableSrtp'
-                  : 'rtsp://användare:lösenord@192.168.1.20:554/...'
-              }
-              className={input}
-            />
-          </label>
-        ) : (
-          <div className="grid grid-cols-[1fr_88px] gap-2">
+              {connections.length > 1 && (
+                <label className="field-label">
+                  Anslutning
+                  <select
+                    value={form.connection}
+                    onChange={(e) => change({ connection: e.target.value as Connection })}
+                    className={`${input} bg-white`}
+                  >
+                    {CONNECTIONS.filter((c) => connections.includes(c.id)).map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-xs font-normal text-muted">
+                    {CONNECTIONS.find((c) => c.id === form.connection)?.hint}
+                  </span>
+                </label>
+              )}
+            </>
+          )}
+
+          {form.kind === 'usb' ? (
             <label className="field-label">
-              {form.kind === 'nvr' ? 'Inspelarens IP-adress' : form.kind === 'phone' ? 'Mobilens IP-adress' : 'IP-adress'}
-              <input value={form.ip} onChange={(e) => set({ ip: e.target.value })} placeholder="192.168.1.20" className={input} />
-            </label>
-            <label className="field-label">
-              Port
-              <input value={form.port} onChange={(e) => set({ port: e.target.value })} inputMode="numeric" className={input} />
-            </label>
-            <label className={`field-label ${form.kind === 'phone' ? 'col-span-2' : ''}`}>
-              Användare{form.kind === 'phone' && ' (om appen kräver det)'}
-              <input value={form.user} onChange={(e) => set({ user: e.target.value })} autoComplete="off" className={input} />
-            </label>
-            {form.kind !== 'phone' && (
-              <label className="field-label">
-                Kanal
-                <input value={form.channel} onChange={(e) => set({ channel: e.target.value })} inputMode="numeric" className={input} />
-              </label>
-            )}
-            <label className="field-label col-span-2">
-              Lösenord
+              Kamerans nummer
               <input
-                type="password"
-                value={form.password}
-                onChange={(e) => set({ password: e.target.value })}
-                autoComplete="new-password"
+                value={form.custom}
+                onChange={(e) => set({ custom: e.target.value })}
+                placeholder="0"
+                inputMode="numeric"
+                className={input}
+              />
+              <span className="text-xs font-normal text-muted">0 = datorns inbyggda kamera, 1 = nästa kamera osv.</span>
+            </label>
+          ) : customAddress ? (
+            <label className="field-label">
+              Kamerans adress
+              <input
+                value={form.custom}
+                onChange={(e) => set({ custom: e.target.value })}
+                placeholder={
+                  form.brand === 'unifi'
+                    ? 'rtsps://192.168.1.1:7441/abc123?enableSrtp'
+                    : 'rtsp://användare:lösenord@192.168.1.20:554/...'
+                }
                 className={input}
               />
             </label>
-            {form.kind === 'nvr' && (
-              <p className="col-span-2 text-xs text-muted">Kanal = kamerans nummer i inspelaren (1, 2, 3 …).</p>
-            )}
-            {url && (
-              <p className="col-span-2 truncate text-xs text-muted" title="Adressen som används">
-                Adress: <code>{url.replace(/:[^:@/]*@/, ':•••@')}</code>
+          ) : (
+            <div className="grid grid-cols-[1fr_88px] gap-2">
+              <label className="field-label">
+                {form.kind === 'nvr' ? 'Inspelarens IP-adress' : form.kind === 'phone' ? 'Mobilens IP-adress' : 'IP-adress'}
+                <input value={form.ip} onChange={(e) => set({ ip: e.target.value })} placeholder="192.168.1.20" className={input} />
+              </label>
+              <label className="field-label">
+                Port
+                <input value={form.port} onChange={(e) => set({ port: e.target.value })} inputMode="numeric" className={input} />
+              </label>
+              <label className={`field-label ${form.kind === 'phone' ? 'col-span-2' : ''}`}>
+                Användare{form.kind === 'phone' && ' (om appen kräver det)'}
+                <input value={form.user} onChange={(e) => set({ user: e.target.value })} autoComplete="off" className={input} />
+              </label>
+              {form.kind !== 'phone' && (
+                <label className="field-label">
+                  Kanal
+                  <input value={form.channel} onChange={(e) => set({ channel: e.target.value })} inputMode="numeric" className={input} />
+                </label>
+              )}
+              <label className="field-label col-span-2">
+                Lösenord
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => set({ password: e.target.value })}
+                  autoComplete="new-password"
+                  className={input}
+                />
+              </label>
+              {form.kind === 'nvr' && (
+                <p className="col-span-2 text-xs text-muted">Kanal = kamerans nummer i inspelaren (1, 2, 3 …).</p>
+              )}
+              {url && (
+                <p className="col-span-2 truncate text-xs text-muted" title="Adressen som används">
+                  Adress: <code>{url.replace(/:[^:@/]*@/, ':•••@')}</code>
+                </p>
+              )}
+            </div>
+          )}
+
+          {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          {tested && test && (
+            <div className="flex flex-col gap-2">
+              {test.preview && (
+                // eslint-disable-next-line @next/next/no-img-element -- förhandsbild från AI-motorn
+                <img src={test.preview} alt="Förhandsbild från kameran" className="w-full rounded-xl border border-line" />
+              )}
+              <p className={`text-sm font-semibold ${test.warning ? 'text-accent-dark' : 'text-teal'}`}>
+                {test.warning ? `Ansluten, men: ${test.warning}` : 'Anslutningen fungerar.'}
               </p>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-        {tested && test && (
-          <div className="flex flex-col gap-2">
-            {test.preview && (
-              // eslint-disable-next-line @next/next/no-img-element -- förhandsbild från AI-motorn
-              <img src={test.preview} alt="Förhandsbild från kameran" className="w-full rounded-xl border border-line" />
-            )}
-            <p className={`text-sm font-semibold ${test.warning ? 'text-accent-dark' : 'text-teal'}`}>
-              {test.warning ? `Ansluten, men: ${test.warning}` : 'Anslutningen fungerar.'}
-            </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={runTest}
+              disabled={!url || busy !== null}
+              className="btn btn-secondary min-h-11"
+            >
+              {busy === 'test' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plug className="h-4 w-4" />} Testa anslutning
+            </button>
+            <button
+              type="button"
+              onClick={save}
+              disabled={!tested || !name.trim() || busy !== null}
+              title={!tested ? 'Testa anslutningen först' : undefined}
+              className="btn btn-accent min-h-11"
+            >
+              {busy === 'save' && <Loader2 className="h-4 w-4 animate-spin" />} Spara kamera
+            </button>
           </div>
-        )}
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={runTest}
-            disabled={!url || busy !== null}
-            className="btn btn-secondary min-h-11"
-          >
-            {busy === 'test' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plug className="h-4 w-4" />} Testa anslutning
-          </button>
-          <button
-            type="button"
-            onClick={save}
-            disabled={!tested || !name.trim() || busy !== null}
-            title={!tested ? 'Testa anslutningen först' : undefined}
-            className="btn btn-accent min-h-11"
-          >
-            {busy === 'save' && <Loader2 className="h-4 w-4 animate-spin" />} Spara kamera
-          </button>
-        </div>
-        <p className="text-xs text-muted">
-          Adressen och lösenordet sparas bara på servern och visas aldrig i webbläsaren igen.
-        </p>
-      </section>
+          <p className="text-xs text-muted">
+            Adressen och lösenordet sparas bara på servern och visas aldrig i webbläsaren igen.
+          </p>
+        </section>
+      </div>
     </div>
   );
 }
