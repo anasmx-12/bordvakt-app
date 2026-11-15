@@ -7,6 +7,7 @@ import { Settings2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/lib/i18n';
 import Vakti from './Vakti';
+import { requiredDone } from '@/lib/setupProgress';
 
 const REDIRECT_SEC = 5;
 
@@ -61,6 +62,12 @@ export default function SetupGate() {
           {t('gate.title')}
         </h2>
         <p className="text-[15px] text-body">{t('gate.body')}</p>
+        <div className="w-full">
+          <div className="h-1.5 overflow-hidden rounded-full bg-line">
+            <div className="h-full rounded-full bg-teal" style={{ width: `${(requiredDone(step) / 4) * 100}%` }} />
+          </div>
+          <p className="mt-1.5 text-[13px] font-semibold text-body">{t('gate.progress', { n: requiredDone(step) })}</p>
+        </div>
         <button type="button" onClick={() => router.replace(target)} className="btn btn-primary btn-lg w-full" autoFocus>
           <Settings2 className="h-5 w-5" />
           {t('gate.go')}

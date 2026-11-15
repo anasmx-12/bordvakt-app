@@ -444,6 +444,7 @@ const ja: Dict = {
   'off.title': "この機能はオフです",
   'off.text': "オーナーがオフにしています。設定 → 機能をカスタマイズ で再びオンにできます。",
   'off.link': "機能をカスタマイズ",
+  'gate.progress': "4ステップ中 {n} 完了",
 };
 
 export default ja;

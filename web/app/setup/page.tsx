@@ -11,6 +11,7 @@ import SectionLabel from '../components/SectionLabel';
 import MenuStep from './MenuStep';
 import ExtrasStep from './ExtrasStep';
 import CameraFinder from './CameraFinder';
+import { progress, SETUP_STEPS, SetupStepId } from '@/lib/setupProgress';
 import CameraLabel from './CameraLabel';
 import { optInChosen } from '@/lib/features';
 import SupportLink from '../components/SupportLink';
@@ -34,7 +35,7 @@ import { CameraBrand, DiningTable } from '@/lib/types';
 import { streamUrl, useEngineStatus } from '@/lib/useEngineStatus';
 import { ActiveFloorPlan, useFloorPlan } from '@/lib/useFloorPlan';
 
-type Step = 'restaurant' | 'floor_plan' | 'cameras' | 'calibrate' | 'menu' | 'extras' | 'done';
+type Step = SetupStepId;
 
 interface SetupStatus {
   step: Step;
@@ -55,15 +56,7 @@ interface CameraRow {
   address: string | null;
 }
 
-const STEPS: { id: Step; label: string }[] = [
-  { id: 'restaurant', label: 'Restaurang' },
-  { id: 'floor_plan', label: 'Planritning' },
-  { id: 'cameras', label: 'Kameror' },
-  { id: 'calibrate', label: 'Kalibrering' },
-  { id: 'menu', label: 'Meny (valfritt)' },
-  { id: 'extras', label: 'Tillval' },
-  { id: 'done', label: 'Klart' },
-];
+const STEPS = SETUP_STEPS;
 const stepIndex = (s: Step) => STEPS.findIndex((x) => x.id === s);
 /** Steget att stå på: när allt annat är klart kommer menyn och tillvalen innan "Klart". */
 const current = (s: SetupStatus, menuDone: boolean, extrasDone = true): Step =>
@@ -165,6 +158,21 @@ export default function SetupWizard() {
 
         {status && step && (
           <>
+            {/* Mobil: steglistan får inte plats, så visa var man är och hur lång tid steget tar */}
+            <div className="mb-3 sm:hidden" aria-hidden="true">
+              <p className="flex items-baseline justify-between text-sm">
+                <span className="font-semibold">
+                  Steg {progress(step).index} av {progress(step).total} · {progress(step).label}
+                </span>
+                {progress(step).minutes > 0 && <span className="text-xs text-muted">ca {progress(step).minutes} min</span>}
+              </p>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line">
+                <div
+                  className="h-full rounded-full bg-teal transition-[width] duration-500"
+                  style={{ width: `${(progress(step).index / progress(step).total) * 100}%` }}
+                />
+              </div>
+            </div>
             <nav aria-label="Steg" className="card mb-5 overflow-x-auto px-3 py-3 sm:px-5">
               <ol className="flex min-w-max items-center">
                 {STEPS.map((s, i) => {

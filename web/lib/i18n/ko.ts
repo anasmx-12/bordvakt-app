@@ -444,6 +444,7 @@ const ko: Dict = {
   'off.title': "이 기능은 꺼져 있습니다",
   'off.text': "매장 주인이 이 기능을 껐습니다. 설정 → 기능 사용자 지정에서 다시 켤 수 있습니다.",
   'off.link': "기능 사용자 지정",
+  'gate.progress': "4단계 중 {n}단계 완료",
 };
 
 export default ko;

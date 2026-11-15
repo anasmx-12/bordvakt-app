@@ -444,6 +444,7 @@ const en: Dict = {
   'off.title': "This feature is turned off",
   'off.text': "The restaurant owner has turned it off. It can be turned on again under Settings → Customize features.",
   'off.link': "Customize features",
+  'gate.progress': "{n} of 4 steps done",
 };
 
 export default en;

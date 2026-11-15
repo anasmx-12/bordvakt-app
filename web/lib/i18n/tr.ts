@@ -444,6 +444,7 @@ const tr: Dict = {
   'off.title': "Bu özellik kapalı",
   'off.text': "Restoran sahibi kapattı. Ayarlar → Özellikleri özelleştir bölümünden açılabilir.",
   'off.link': "Özellikleri özelleştir",
+  'gate.progress': "4 adımdan {n} tanesi tamam",
 };
 
 export default tr;

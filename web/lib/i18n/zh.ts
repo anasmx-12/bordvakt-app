@@ -444,6 +444,7 @@ const zh: Dict = {
   'off.title': "此功能已关闭",
   'off.text': "餐厅老板已关闭此功能，可在“设置 → 自定义功能”中重新开启。",
   'off.link': "自定义功能",
+  'gate.progress': "已完成 {n}/4 步",
 };
 
 export default zh;

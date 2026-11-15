@@ -444,6 +444,7 @@ const de: Dict = {
   'off.title': "Diese Funktion ist ausgeschaltet",
   'off.text': "Der Inhaber hat sie ausgeschaltet. Unter Einstellungen → Funktionen anpassen lässt sie sich wieder einschalten.",
   'off.link': "Funktionen anpassen",
+  'gate.progress': "{n} von 4 Schritten erledigt",
 };
 
 export default de;

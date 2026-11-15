@@ -444,6 +444,7 @@ const pt: Dict = {
   'off.title': "Esta funcionalidade está desativada",
   'off.text': "O proprietário desativou-a. Pode ser ativada em Definições → Personalizar funcionalidades.",
   'off.link': "Personalizar funcionalidades",
+  'gate.progress': "{n} de 4 etapas concluídas",
 };
 
 export default pt;

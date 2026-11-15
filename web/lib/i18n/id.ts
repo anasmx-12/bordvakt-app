@@ -444,6 +444,7 @@ const id: Dict = {
   'off.title': "Fitur ini dimatikan",
   'off.text': "Pemilik restoran mematikannya. Bisa diaktifkan lagi di Pengaturan → Sesuaikan fitur.",
   'off.link': "Sesuaikan fitur",
+  'gate.progress': "{n} dari 4 langkah selesai",
 };
 
 export default id;

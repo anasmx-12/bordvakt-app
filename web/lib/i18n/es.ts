@@ -444,6 +444,7 @@ const es: Dict = {
   'off.title': "Esta función está desactivada",
   'off.text': "El propietario la ha desactivado. Puede activarse en Ajustes → Personalizar funciones.",
   'off.link': "Personalizar funciones",
+  'gate.progress': "{n} de 4 pasos listos",
 };
 
 export default es;

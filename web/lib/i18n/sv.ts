@@ -477,6 +477,7 @@ const sv = {
   'off.title': "Den här funktionen är avstängd",
   'off.text': "Restaurangens ägare har stängt av den. Den kan slås på igen under Inställningar → Anpassa funktioner.",
   'off.link': "Anpassa funktioner",
+  'gate.progress': "{n} av 4 steg klara",
 } as const;
 
 export type Key = keyof typeof sv;
