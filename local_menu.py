@@ -2,7 +2,10 @@
 Fota menyn: gör ett utkast till restaurangens meny från foton av den tryckta menyn.
 
 1. Macens inbyggda textigenkänning (tools/ocr.swift, byggs första gången) läser texten.
-2. Samma lokala språkmodell som Vakti (Ollama) sorterar texten i kategorier, rätter och priser.
+2. En vanlig meny (rubrik, "Rätt ... 115 kr", ingredienser under) sorteras med fasta regler,
+   som ger samma svar varje gång (parse_rules).
+3. Annars (t.ex. två spalter, priset på egen rad) sorterar samma lokala språkmodell som
+   Vakti (Ollama) texten i kategorier, rätter och priser.
 
 Ingen ny modell behöver laddas ner och inget lämnar datorn. Ägaren rättar alltid utkastet
 innan det sparas, eftersom läsningen kan bli fel.
@@ -46,7 +49,40 @@ def read_text(image: bytes) -> str:
         done = subprocess.run([_ocr_binary(), f.name], capture_output=True, timeout=60)
     if done.returncode != 0:
         raise MenuReadError("Kunde inte läsa bilden. Använd JPG eller PNG.")
-    return join_rows(json.loads(done.stdout or b"[]"))
+    return layout(json.loads(done.stdout or b"[]"))
+
+
+def _split(rows: list[dict]):
+    """Hittar en lodrät linje som ingen text korsar, med minst tre rader på var sida.
+    Rubriker överst som går tvärs över (restaurangens namn) får korsa. None = en spalt."""
+    if any("w" not in r for r in rows):
+        return None
+    best = None
+    for step in range(15, 86):
+        g = step / 100
+        left = [r for r in rows if r["x"] + r["w"] <= g]
+        right = [r for r in rows if r["x"] >= g]
+        across = [r for r in rows if r["x"] < g < r["x"] + r["w"]]
+        if len(left) < 3 or len(right) < 3:
+            continue
+        if across and max(r["y"] for r in across) >= min(r["y"] for r in left + right):
+            continue  # text tvärs över mitt i menyn: inte två spalter
+        if sum(bool(PRICE_ONLY.match(r["text"])) for r in right) * 2 >= len(right):
+            continue  # till höger står bara priser: det är samma spalt
+        score = min(len(left), len(right))
+        if not best or score > best[0]:
+            best = (score, across, left, right)
+    return best[1:] if best else None
+
+
+def layout(rows: list[dict], depth: int = 0) -> str:
+    """Texten i läsordning: spalt för spalt (vänster först), rad för rad i varje spalt."""
+    split = _split(rows) if depth < 2 else None
+    if not split:
+        return join_rows(rows)
+    across, left, right = split
+    parts = [join_rows(across) if across else "", layout(left, depth + 1), layout(right, depth + 1)]
+    return "\n".join(p for p in parts if p)
 
 
 def join_rows(rows: list[dict]) -> str:
@@ -133,6 +169,61 @@ def structure(text: str) -> dict:
         raise MenuReadError("AI:n kunde inte sortera menyn. Försök igen eller lägg in rätterna för hand.") from e
 
 
+# ------------------------------------------------------------ Fasta regler
+
+_CURRENCY = r"(?:kr\.?|:-|sek|€|eur|\$|nok|dkk)"
+_NUMBER = r"\d{1,5}(?:[.,]\d{1,2})?"
+# Priset sist på raden: "115 kr", "229:-", "kr 289", "- 30", "12.5 €"
+PRICE_END = re.compile(rf"(?:^|\s)(?:[-–:]\s*)?(?:(?:kr|sek|€|\$)\s*)?({_NUMBER})\s*{_CURRENCY}?$", re.I)
+PRICE_ONLY = re.compile(rf"^\s*(?:kr\s*)?{_NUMBER}\s*{_CURRENCY}?\s*$", re.I)
+PRICE_INSIDE = re.compile(rf"\d{{2,5}}\s*{_CURRENCY}(?:\s|$)", re.I)
+CONTACT = re.compile(r"(?i)(\b(öppet|öppettider|tel|telefon|adress|open|hours|swish|org\.?\s?nr|välkomna)\b|www\.|https?:|@)")
+
+
+def _is_heading(line: str, prev: str | None, next_is_item: bool) -> bool:
+    letters = [c for c in line if c.isalpha()]
+    if len(letters) < 2 or "," in line or len(line) > 40:
+        return False
+    if all(c.isupper() for c in letters) or line.endswith(":"):
+        return True
+    words = line.split()
+    if not next_is_item or not line[0].isupper() or any(c.isdigit() for c in line):
+        return False
+    return len(words) <= (2 if prev == "item" else 3)
+
+
+def parse_rules(text: str) -> dict | None:
+    """Sorterar en vanlig meny utan språkmodell. None = menyn ser annorlunda ut, låt AI:n ta den."""
+    lines = [re.sub(r"\s+", " ", l).strip(" .") for l in text.splitlines()]
+    lines = [l for l in lines if l and not CONTACT.search(l)]
+    priced = [PRICE_END.search(l) for l in lines]
+    categories: list[dict] = []
+    prev = None
+    count = 0
+    for n, line in enumerate(lines):
+        if PRICE_ONLY.match(line):
+            return None  # priset står på egen rad
+        match = priced[n]
+        name = line[: match.start()].strip(" .–-:") if match else ""
+        if match and any(c.isalpha() for c in name):
+            if PRICE_INSIDE.search(name):
+                return None  # två rätter på samma rad (två spalter)
+            if not categories:
+                categories.append({"name": "", "items": []})
+            categories[-1]["items"].append({"name": name, "description": "", "price": _price(match.group(1))})
+            prev, count = "item", count + 1
+            continue
+        next_is_item = n + 1 < len(lines) and bool(priced[n + 1])
+        if _is_heading(line, prev, next_is_item):
+            categories.append({"name": line.rstrip(":"), "items": []})
+            prev = "heading"
+        elif prev in ("item", "desc"):
+            item = categories[-1]["items"][-1]
+            item["description"] = f"{item['description']} {line}".strip()
+            prev = "desc"
+    return {"categories": categories} if count >= 2 else None
+
+
 def _price(value) -> float:
     try:
         price = round(float(str(value).replace(",", ".").replace(" ", "")), 2)
@@ -143,18 +234,20 @@ def _price(value) -> float:
 
 def clean(data: dict) -> dict:
     """Bara giltiga kategorier och rätter, med rimliga längder."""
-    result, count = [], 0
+    result, count, seen = [], 0, set()
     for c in data.get("categories", []) if isinstance(data, dict) else []:
         items = []
         for i in c.get("items", []) if isinstance(c, dict) else []:
             name = str(i.get("name", "")).strip()[:80] if isinstance(i, dict) else ""
-            if not name or count >= MAX_ITEMS:
-                continue
+            price = _price(i.get("price", 0)) if name else 0.0
+            if not name or count >= MAX_ITEMS or (name.lower(), price) in seen:
+                continue  # tom, för många, eller samma rätt två gånger
+            seen.add((name.lower(), price))
             count += 1
             items.append({
                 "name": name,
                 "description": str(i.get("description") or "").strip()[:300],
-                "price": _price(i.get("price", 0)),
+                "price": price,
             })
         name = str(c.get("name", "")).strip()[:60] if isinstance(c, dict) else ""
         if items:
@@ -168,7 +261,8 @@ def menu_from_photos(images: list[bytes]) -> dict:
     text = "\n\n".join(t for t in texts if t.strip())
     if not text.strip():
         raise MenuReadError("Ingen text hittades på fotot. Fota menyn rakt framifrån i bra ljus.")
-    menu = structure(text)
+    rules = parse_rules(text)
+    menu = clean(rules) if rules else structure(text)
     if not menu["categories"]:
         raise MenuReadError("AI:n hittade inga rätter på fotot. Lägg in dem för hand eller ta ett skarpare foto.")
     return menu

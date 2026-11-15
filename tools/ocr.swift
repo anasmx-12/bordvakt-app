@@ -22,12 +22,12 @@ do {
     exit(3)
 }
 
-// x, y = vänster och överkant (0–1, uppifrån), h = radens höjd (större text = rubrik)
+// x, y = vänster och överkant (0–1, uppifrån), w = bredd, h = radens höjd (större text = rubrik)
 var rows: [[String: Any]] = []
 for case let obs as VNRecognizedTextObservation in request.results ?? [] {
     guard let best = obs.topCandidates(1).first else { continue }
     let box = obs.boundingBox
-    rows.append(["text": best.string, "x": box.minX, "y": 1 - box.maxY, "h": box.height])
+    rows.append(["text": best.string, "x": box.minX, "y": 1 - box.maxY, "w": box.width, "h": box.height])
 }
 let data = try! JSONSerialization.data(withJSONObject: rows)
 FileHandle.standardOutput.write(data)
