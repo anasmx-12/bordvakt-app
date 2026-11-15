@@ -126,6 +126,7 @@ function ConnectForm({
   const [error, setError] = useState<{ text: string; auth: boolean } | null>(null);
   const [result, setResult] = useState<Extract<ConnectResult, { ok: true }> | null>(null);
   const [chosen, setChosen] = useState<Set<number>>(new Set());
+  const [saved, setSaved] = useState<Set<number>>(new Set()); // sparas aldrig två gånger
   const [names, setNames] = useState<Record<number, string>>({});
   const guide = guideFor(camera.brand);
 
@@ -183,8 +184,9 @@ function ConnectForm({
     if (!result) return;
     setBusy('save');
     setError(null);
+    let any = false;
     try {
-      for (const c of result.channels.filter((c) => chosen.has(c.channel))) {
+      for (const c of result.channels.filter((c) => chosen.has(c.channel) && !saved.has(c.channel))) {
         const res = await fetch('/api/setup/cameras', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -195,16 +197,19 @@ function ConnectForm({
           }),
         });
         if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Kunde inte spara kameran');
+        any = true;
+        setSaved((s) => new Set(s).add(c.channel));
       }
-      await onSaved();
     } catch (err) {
       setError({ text: (err as Error).message, auth: false });
     } finally {
+      if (any) await onSaved();
       setBusy(null);
     }
   }
 
   const many = (result?.channels.length ?? 0) > 1;
+  const left = [...chosen].filter((ch) => !saved.has(ch)).length;
 
   return (
     <div className="flex flex-col gap-3 border-t border-line-soft p-3">
@@ -255,27 +260,32 @@ function ConnectForm({
           {result.channels.map((c) => (
             <div key={c.channel} className="flex flex-col gap-2 rounded-lg border border-line-soft p-3">
               <div className="flex flex-wrap items-center gap-2">
-                {many && (
-                  <input
-                    type="checkbox"
-                    checked={chosen.has(c.channel)}
-                    onChange={(e) =>
-                      setChosen((s) => {
-                        const next = new Set(s);
-                        if (e.target.checked) next.add(c.channel);
-                        else next.delete(c.channel);
-                        return next;
-                      })
-                    }
-                    aria-label={`Spara kanal ${c.channel}`}
-                    className="h-5 w-5"
-                  />
+                {saved.has(c.channel) ? (
+                  <Check className="h-5 w-5 text-teal" aria-label="Sparad" />
+                ) : (
+                  many && (
+                    <input
+                      type="checkbox"
+                      checked={chosen.has(c.channel)}
+                      onChange={(e) =>
+                        setChosen((s) => {
+                          const next = new Set(s);
+                          if (e.target.checked) next.add(c.channel);
+                          else next.delete(c.channel);
+                          return next;
+                        })
+                      }
+                      aria-label={`Spara kanal ${c.channel}`}
+                      className="h-5 w-5"
+                    />
+                  )
                 )}
                 <input
                   value={names[c.channel] ?? ''}
                   onChange={(e) => setNames((n) => ({ ...n, [c.channel]: e.target.value }))}
                   aria-label="Kamerans namn"
                   placeholder="T.ex. Matsal norr"
+                  disabled={saved.has(c.channel)}
                   className="field min-w-0 flex-1"
                 />
               </div>
@@ -292,15 +302,22 @@ function ConnectForm({
               {error.text}
             </p>
           )}
-          <button
-            type="button"
-            onClick={save}
-            disabled={busy !== null || chosen.size === 0}
-            className="btn btn-lg btn-accent"
-          >
-            {busy === 'save' && <Loader2 className="h-4 w-4 animate-spin" />}
-            {many ? `Spara ${chosen.size} kameror` : 'Spara kameran'}
-          </button>
+          {left === 0 && saved.size > 0 ? (
+            <p className="flex items-center gap-2 rounded-lg bg-teal-light p-3 text-sm font-semibold">
+              <Check className="h-4 w-4 text-teal" />{' '}
+              {many ? 'Sparade. De syns nu i listan över kameror.' : 'Sparad. Den syns nu i listan över kameror.'}
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={save}
+              disabled={busy !== null || left === 0}
+              className="btn btn-lg btn-accent"
+            >
+              {busy === 'save' && <Loader2 className="h-4 w-4 animate-spin" />}
+              {many ? `Spara ${left} kameror` : 'Spara kameran'}
+            </button>
+          )}
         </>
       )}
     </div>
