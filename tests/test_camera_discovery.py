@@ -9,6 +9,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 import camera_discovery as cd  # noqa: E402
+import local_ai  # noqa: E402
 
 
 class BrandFromTextTest(unittest.TestCase):
@@ -211,6 +212,107 @@ class OnvifStreamsTest(unittest.TestCase):
         fault = ENV.format("<s:Fault><s:Code><s:Subcode><s:Value>ter:NotAuthorized</s:Value></s:Subcode></s:Code></s:Fault>")
         with self.assertRaises(cd.AuthError):
             cd.onvif_streams("http://192.168.1.64/onvif/device_service", "admin", "x", post=lambda u, b: (400, fault))
+
+
+class ConnectTest(unittest.TestCase):
+    def test_public_ip_refused_without_trying(self):
+        calls = []
+        r = cd.connect("8.8.8.8", "admin", "x", grab=lambda u: calls.append(u))
+        self.assertEqual((r["ok"], r["reason"], calls), (False, "unreachable", []))
+
+    def test_brand_channels_until_silence(self):
+        ok = {"rtsp://admin:pw@192.168.1.64:554/Streaming/Channels/101", "rtsp://admin:pw@192.168.1.64:554/Streaming/Channels/201"}
+        r = cd.connect("192.168.1.64", "admin", "pw", brand="hikvision", grab=lambda u: "ok" if u in ok else None)
+        self.assertTrue(r["ok"])
+        self.assertEqual([c["channel"] for c in r["channels"]], [1, 2])
+        self.assertEqual(r["brand"], "hikvision")
+
+    def test_stops_at_16_channels(self):
+        r = cd.connect("192.168.1.64", "admin", "pw", brand="hikvision", grab=lambda u: "ok")
+        self.assertEqual(len(r["channels"]), 16)
+
+    def test_single_channel_brand_is_tried_once(self):
+        calls = []
+        r = cd.connect("192.168.1.64", "admin", "pw", brand="axis", grab=lambda u: calls.append(u) or "ok")
+        self.assertEqual((len(r["channels"]), len(calls)), (1, 1))
+
+    def test_wrong_password(self):
+        r = cd.connect("192.168.1.64", "admin", "bad", brand="hikvision", grab=lambda u: "auth")
+        self.assertEqual((r["ok"], r["reason"]), (False, "auth"))
+
+    def test_unknown_brand_finds_dahua(self):
+        r = cd.connect("192.168.1.70", "admin", "pw", grab=lambda u: "ok" if "realmonitor?channel=1&" in u else None)
+        self.assertEqual(r["brand"], "dahua")
+
+    def test_no_video(self):
+        self.assertEqual(cd.connect("192.168.1.64", "admin", "pw", brand="axis", grab=lambda u: None)["reason"], "no_stream")
+
+    def test_password_never_in_error(self):
+        for grab in (lambda u: None, lambda u: "auth"):
+            r = cd.connect("192.168.1.64", "admin", "hemligt", brand="axis", grab=grab)
+            self.assertNotIn("hemligt", r["error"])
+
+    def test_onvif_first(self):
+        url = "rtsp://admin:pw@192.168.1.64:554/Streaming/Channels/101"
+        r = cd.connect("192.168.1.64", "admin", "pw", onvif_url="http://192.168.1.64/onvif/device_service",
+                       grab=lambda u: "ok" if u == url else None,
+                       onvif=lambda o, user, pw: ({"brand": "hikvision", "model": "DS-2CD2143G2-I"}, [url]))
+        self.assertEqual((r["model"], r["channels"][0]["stream_url"]), ("DS-2CD2143G2-I", url))
+
+    def test_onvif_wrong_password(self):
+        def onvif(o, user, pw):
+            raise cd.AuthError()
+        r = cd.connect("192.168.1.64", "admin", "x", onvif_url="http://192.168.1.64/onvif/device_service",
+                       grab=lambda u: None, onvif=onvif)
+        self.assertEqual(r["reason"], "auth")
+
+    def test_onvif_stream_on_other_host_is_skipped(self):
+        r = cd.connect("192.168.1.64", "admin", "pw", brand="axis", onvif_url="http://192.168.1.64/onvif/device_service",
+                       grab=lambda u: "ok", onvif=lambda o, user, pw: ({"brand": "axis", "model": None}, ["rtsp://admin:pw@8.8.8.8/x"]))
+        self.assertNotIn("8.8.8.8", r["channels"][0]["stream_url"])
+
+
+def det(cls, x1, y1, x2, y2, score=0.9):
+    return local_ai.Detection(cls, score, (x1, y1, x2, y2))
+
+
+class PlacementTest(unittest.TestCase):
+    shape = (1000, 1000, 3)
+
+    def test_counts_and_few(self):
+        p = cd.placement([det(60, 100, 100, 300, 300), det(60, 500, 100, 700, 300), det(56, 0, 0, 50, 50)], self.shape, None, 8)
+        self.assertEqual((p["tables_seen"], p["chairs_seen"], p["plan_tables"]), (2, 1, 8))
+        self.assertIn("few_tables", p["tips"])
+        self.assertEqual(p["boxes"][0], [0.1, 0.1, 0.3, 0.3])
+
+    def test_too_low(self):
+        p = cd.placement([det(60, 0, 850, 100, 950), det(60, 200, 820, 300, 990)], self.shape, None, 2)
+        self.assertIn("too_low", p["tips"])
+
+    def test_dark_and_none(self):
+        p = cd.placement([], self.shape, local_ai.ISSUE_DARK, 4)
+        self.assertEqual(p["tips"], ["too_dark", "no_tables"])
+
+    def test_blurry(self):
+        self.assertIn("blurry", cd.placement([], self.shape, local_ai.ISSUE_BLURRY, 0)["tips"])
+
+    def test_low_score_ignored(self):
+        self.assertEqual(cd.placement([det(60, 0, 0, 10, 10, 0.2)], self.shape, None, 1)["tables_seen"], 0)
+
+    def test_enough_tables_no_tips(self):
+        p = cd.placement([det(60, 100, 100, 300, 300), det(60, 400, 100, 600, 300)], self.shape, None, 3)
+        self.assertEqual(p["tips"], [])
+
+
+class RtspDigestTest(unittest.TestCase):
+    def test_rfc2617_example(self):
+        # RFC 2617 avsnitt 3.5 (utan qop): response = MD5(HA1:nonce:HA2)
+        ha1 = hashlib.md5(b"Mufasa:testrealm@host.com:Circle Of Life").hexdigest()
+        ha2 = hashlib.md5(b"DESCRIBE:rtsp://10.0.0.2/x").hexdigest()
+        expected = hashlib.md5(f"{ha1}:abc:{ha2}".encode()).hexdigest()
+        header = cd.rtsp_digest("Mufasa", "Circle Of Life", "testrealm@host.com", "abc", "DESCRIBE", "rtsp://10.0.0.2/x")
+        self.assertIn(f'response="{expected}"', header)
+        self.assertTrue(header.startswith("Digest "))
 
 
 if __name__ == "__main__":

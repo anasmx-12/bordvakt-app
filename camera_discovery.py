@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
-from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.parse import quote, unquote, urlsplit, urlunsplit
 from xml.sax.saxutils import escape
 
 # ------------------------------------------------------------- Märken
@@ -359,3 +359,171 @@ def onvif_streams(onvif_url: str, user: str, password: str, post=None) -> tuple[
             if full not in urls:
                 urls.append(full)
     return {"brand": brand, "model": model}, urls
+
+
+# ------------------------------------------------------------- Koppla kameran
+MAX_CHANNELS = 16
+ERRORS = {
+    "unreachable": "Adressen måste vara en kamera i restaurangens nät.",
+    "auth": "Fel användarnamn eller lösenord.",
+    "no_stream": "Kameran svarar men ger ingen video. Slå på RTSP i kamerans app (se guiden) och försök igen.",
+}
+
+
+def rtsp_digest(user: str, password: str, realm: str, nonce: str, method: str, uri: str) -> str:
+    ha1 = hashlib.md5(f"{user}:{realm}:{password}".encode()).hexdigest()
+    ha2 = hashlib.md5(f"{method}:{uri}".encode()).hexdigest()
+    response = hashlib.md5(f"{ha1}:{nonce}:{ha2}".encode()).hexdigest()
+    return f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="{uri}", response="{response}"'
+
+
+def _describe(url: str, timeout: float = 3.0) -> int | None:
+    """RTSP DESCRIBE med inloggningen i adressen. Svarskoden (200, 401, 404 …) eller None om kameran inte svarar."""
+    parts = urlsplit(url)
+    if not parts.hostname:
+        return None
+    user, password = unquote(parts.username or ""), unquote(parts.password or "")
+    bare = urlunsplit((parts.scheme, f"{parts.hostname}:{parts.port or 554}", parts.path, parts.query, ""))
+
+    def send(sock, cseq: int, auth: str | None) -> tuple[int | None, str]:
+        lines = [f"DESCRIBE {bare} RTSP/1.0", f"CSeq: {cseq}", "Accept: application/sdp", "User-Agent: Bordvakt"]
+        if auth:
+            lines.append(f"Authorization: {auth}")
+        sock.sendall(("\r\n".join(lines) + "\r\n\r\n").encode())
+        head = b""
+        while b"\r\n\r\n" not in head and len(head) < 16384:
+            chunk = sock.recv(4096)
+            if not chunk:
+                break
+            head += chunk
+        text = head.decode("latin-1")
+        m = re.match(r"RTSP/1\.0 (\d{3})", text)
+        return (int(m.group(1)) if m else None), text
+
+    try:
+        with socket.create_connection((parts.hostname, parts.port or 554), timeout=timeout) as sock:
+            sock.settimeout(timeout)
+            status, text = send(sock, 1, None)
+            if status != 401:
+                return status
+            digest = re.search(r'WWW-Authenticate:\s*Digest\s+([^\r\n]+)', text, re.I)
+            if digest:
+                fields = dict(re.findall(r'(\w+)="([^"]*)"', digest.group(1)))
+                auth = rtsp_digest(user, password, fields.get("realm", ""), fields.get("nonce", ""), "DESCRIBE", bare)
+            else:
+                auth = "Basic " + base64.b64encode(f"{user}:{password}".encode()).decode()
+            status, _ = send(sock, 2, auth)
+            return status
+    except OSError:
+        return None
+
+
+def _grab(url: str) -> str | None:
+    """'ok' om adressen ger video, 'auth' vid fel inloggning, annars None."""
+    status = _describe(url)
+    if status == 401:
+        return "auth"
+    if status != 200:
+        return None
+    import cv2  # bara här: modulens rena funktioner ska gå att testa utan OpenCV
+    cap = cv2.VideoCapture(url, cv2.CAP_ANY, [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 4000, cv2.CAP_PROP_READ_TIMEOUT_MSEC, 4000])
+    try:
+        if cap.isOpened():
+            for _ in range(5):
+                ok, frame = cap.read()
+                if ok and frame is not None:
+                    return "ok"
+    finally:
+        cap.release()
+    return None
+
+
+def _fail(reason: str) -> dict:
+    return {"ok": False, "reason": reason, "error": ERRORS[reason]}
+
+
+def _channels(ip: str, brand: str, user: str, password: str, grab, start: int = 1) -> tuple[list[dict], bool]:
+    """Kanal start, start+1, … tills en kanal inte svarar. (kanaler, fick fel lösenord)"""
+    found: list[dict] = []
+    last = 1 if brand in SINGLE_CHANNEL else MAX_CHANNELS
+    for ch in range(start, last + 1):
+        url = rtsp_url(ip, brand, user, password, ch)
+        result = grab(url)
+        if result == "auth" and not found:
+            return [], True
+        if result != "ok":
+            break
+        found.append({"channel": ch, "stream_url": url})
+    return found, False
+
+
+def connect(ip: str, user: str, password: str, brand: str | None = None, onvif_url: str | None = None,
+            grab=None, onvif=None) -> dict:
+    """Hittar kamerans videoadress(er). Lösenordet står bara i stream_url, aldrig i fel."""
+    if not is_private_ip(ip):
+        return _fail("unreachable")
+    grab = grab or _grab
+    onvif = onvif or onvif_streams
+    model = None
+    auth_failed = False
+
+    if onvif_url and urlsplit(onvif_url).hostname == ip:
+        try:
+            info, urls = onvif(onvif_url, user, password)
+            brand = brand or info.get("brand")
+            model = info.get("model")
+            channels = []
+            for url in urls:
+                if urlsplit(url).hostname != ip:
+                    continue
+                result = grab(url)
+                auth_failed = auth_failed or result == "auth"
+                if result == "ok":
+                    channels.append({"channel": len(channels) + 1, "stream_url": url})
+                if len(channels) >= MAX_CHANNELS:
+                    break
+            if channels:
+                return {"ok": True, "brand": brand, "model": model, "channels": channels}
+        except AuthError:
+            return _fail("auth")
+        except Exception:
+            pass  # ONVIF avstängt eller trasigt: prova märkets sökvägar
+
+    if brand in RTSP_PATHS:
+        channels, auth = _channels(ip, brand, user, password, grab)
+        if channels:
+            return {"ok": True, "brand": brand, "model": model, "channels": channels}
+        auth_failed = auth_failed or auth
+    else:
+        for candidate in RTSP_PATHS:
+            result = grab(rtsp_url(ip, candidate, user, password, 1))
+            if result == "auth":
+                auth_failed = True
+            if result == "ok":
+                first = {"channel": 1, "stream_url": rtsp_url(ip, candidate, user, password, 1)}
+                more = [] if candidate in SINGLE_CHANNEL else _channels(ip, candidate, user, password, grab, start=2)[0]
+                return {"ok": True, "brand": candidate, "model": model, "channels": [first, *more]}
+    return _fail("auth" if auth_failed else "no_stream")
+
+
+# ------------------------------------------------------------- Placeringskollen
+def placement(detections: list, frame_shape: tuple, problem: str | None, plan_tables: int) -> dict:
+    """Hur många bord kameran ser, och vad som kan bli bättre. Tipsen är koder som webbappen översätter."""
+    from local_ai import CHAIR, DINING_TABLE, ISSUE_BLURRY, ISSUE_DARK
+    h, w = frame_shape[:2]
+    tables = [d for d in detections if d.cls == DINING_TABLE and d.score >= 0.35]
+    chairs = [d for d in detections if d.cls == CHAIR and d.score >= 0.35]
+    boxes = [[round(d.box[0] / w, 3), round(d.box[1] / h, 3), round(d.box[2] / w, 3), round(d.box[3] / h, 3)] for d in tables]
+    tips = []
+    if problem == ISSUE_DARK:
+        tips.append("too_dark")
+    if problem == ISSUE_BLURRY:
+        tips.append("blurry")
+    if not tables:
+        tips.append("no_tables")
+    elif plan_tables and len(tables) < plan_tables / 2:
+        tips.append("few_tables")
+    low = [b for b in boxes if (b[1] + b[3]) / 2 > 0.8]
+    if len(tables) >= 2 and len(low) > len(tables) / 2:
+        tips.append("too_low")
+    return {"tables_seen": len(tables), "chairs_seen": len(chairs), "boxes": boxes, "plan_tables": plan_tables, "tips": tips}
