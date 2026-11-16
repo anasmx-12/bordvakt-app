@@ -17,7 +17,7 @@ type Input = Record<string, unknown>;
 type Handler = (ctx: DeskContext, req: { url: URL; input: Input }, id: string) => Promise<unknown>;
 
 const ROUTES: [method: string, path: string, level: Level, run: Handler][] = [
-  ['POST', 'auth/login-limit', 'key', (c) => auth.loginLimit(c)],
+  ['POST', 'auth/login-limit', 'key', (c, r) => auth.loginLimit(c, r.input)],
   ['POST', 'auth/login-failed', 'key', (c, r) => auth.loginFailed(c, r.input)],
   ['POST', 'auth/login-check', 'password', (c) => auth.loginCheck(c)],
   ['POST', 'auth/mfa-attempt', 'password', (c) => auth.mfaAttempt(c)],

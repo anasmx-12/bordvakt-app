@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'crypto';
 import { serverSupabase, UserError } from '@/lib/server';
 import { sendMail } from '@/lib/mail';
 import { sharedRateLimit } from '@/lib/rateLimit';
+import { breachedPassword, BREACHED_MESSAGE } from '@/lib/breachedPassword';
 import { audit, DeskContext, supportSite, text } from './gate';
 
 // Inloggning och inbjudningar till supportsajten. Själva lösenordet och koden från
@@ -13,8 +14,17 @@ export const INVITE_HOURS = 48;
 const hashToken = (token: string) => createHash('sha256').update(`support-invite:${token}`).digest('hex');
 
 /** POST auth/login-limit — högst 8 inloggningsförsök per minut från samma adress (alla servrar). */
-export async function loginLimit(ctx: DeskContext) {
+export async function loginLimit(ctx: DeskContext, input: Record<string, unknown> = {}) {
   if (!(await sharedRateLimit(`support:auth:${ctx.ip ?? 'okänd'}`, 8))) throw new UserError('För många försök. Vänta en minut.', 429);
+  // Per konto också: den som byter nätverk/IP ska inte kunna fortsätta gissa samma kontos lösenord.
+  // Adressen hashas så att den inte sparas i klartext i tabellen för gränserna.
+  const email = text(input.email, 200).toLowerCase();
+  if (email) {
+    const key = createHash('sha256').update(`support-login:${email}`).digest('hex').slice(0, 32);
+    if (!(await sharedRateLimit(`support:account:${key}`, 10, 15 * 60))) {
+      throw new UserError('För många försök på det här kontot. Vänta 15 minuter.', 429);
+    }
+  }
   return { ok: true };
 }
 
@@ -140,6 +150,7 @@ export async function inviteAccept(ctx: DeskContext, input: Record<string, unkno
   const invite = await findInvite(input.token);
   if (!invite) throw new UserError('Länken har gått ut eller använts redan. Be en administratör om en ny.', 410);
   const password = checkPassword(input.password, invite.email);
+  if (await breachedPassword(password)) throw new UserError(BREACHED_MESSAGE);
   const db = serverSupabase();
   const { error } = await db.auth.admin.updateUserById(invite.userId, { password });
   if (error) throw new UserError(`Kunde inte spara lösenordet: ${error.message}`, 400);

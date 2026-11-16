@@ -1,3 +1,4 @@
+import { breachedPassword, BREACHED_MESSAGE } from '@/lib/breachedPassword';
 import { checkNewPassword } from '@/lib/password';
 import { findReset } from '@/lib/passwordReset';
 import { errorResponse, serverSupabase, UserError } from '@/lib/server';
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
       .maybeSingle();
     const restaurant = (m?.restaurants as { name?: string } | null)?.name ?? '';
     const password = checkNewPassword(body?.password, reset.email, restaurant);
+    if (await breachedPassword(password)) throw new UserError(BREACHED_MESSAGE);
 
     // Länken förbrukas först, så att den inte kan användas två gånger samtidigt
     const { data: used } = await supabase.from('password_resets').delete().eq('user_id', reset.userId).select('token_hash');

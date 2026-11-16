@@ -1,6 +1,7 @@
 import { errorResponse, serverSupabase, UserError } from '@/lib/server';
 import { assertRealEmail, sendEmailCode } from '@/lib/identity';
 import { weakPassword } from '@/lib/password';
+import { breachedPassword, BREACHED_MESSAGE } from '@/lib/breachedPassword';
 
 
 // POST /api/signup { restaurant, email, password } — skapar ett konto och en egen restaurang.
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
     if (weakPassword(password, email, restaurant)) {
       throw new UserError('Lösenordet är för lätt att gissa. Välj något längre som inte innehåller e-postadressen eller restaurangens namn.');
     }
+    if (await breachedPassword(password)) throw new UserError(BREACHED_MESSAGE);
     await assertRealEmail(email);
 
     const supabase = serverSupabase();

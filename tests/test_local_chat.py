@@ -46,3 +46,25 @@ class SystemPromptTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RelevantManualTest(unittest.TestCase):
+    """Vakti får de delar av manualen som rör frågan (en liten modell svarar bättre då)."""
+
+    def test_question_about_dessert_gets_the_dining_section(self):
+        part = local_chat.relevant_manual("Vad betyder dessertläge?")
+        self.assertIn("Dessertläge: maten är avplockad", part)
+        self.assertLess(len(part), len(local_chat.MANUAL))
+
+    def test_camera_brand_question_gets_the_camera_step(self):
+        self.assertIn("Hikvision", local_chat.relevant_manual("Hur kopplar jag en Hikvision kamera?"))
+
+    def test_unknown_words_get_the_whole_manual(self):
+        self.assertEqual(local_chat.relevant_manual("xyzzy qwrt"), local_chat.MANUAL)
+
+    def test_small_manual_is_sent_whole(self):
+        self.assertEqual(local_chat.relevant_manual("kamera", manual="# Kort\nkamera\n"), "# Kort\nkamera\n")
+
+    def test_stays_within_budget(self):
+        part = local_chat.relevant_manual("kamera bord larm notan ljud kod meny", budget=3000)
+        self.assertLessEqual(len(part), 3000)

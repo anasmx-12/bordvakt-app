@@ -1,3 +1,4 @@
+import { breachedPassword, BREACHED_MESSAGE } from '@/lib/breachedPassword';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
 
     const { data: r } = await supabase.from('restaurants').select('name').eq('id', restaurantId).maybeSingle();
     const password = checkNewPassword(body.password, user.email, r?.name ?? '');
+    if (await breachedPassword(password)) throw new UserError(BREACHED_MESSAGE);
     if (password === current) throw new UserError('Det nya lösenordet måste vara ett annat än det gamla.');
 
     const { error } = await supabase.auth.admin.updateUserById(user.id, { password });

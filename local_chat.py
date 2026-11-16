@@ -17,6 +17,7 @@ KEEP_ALIVE utan frågor.
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import threading
@@ -92,10 +93,44 @@ Det som måste göras på plats (sätta upp QR-koder vid borden, montera eller k
 Hänvisa dit när du inte kan lösa problemet eller när något behöver göras på plats.
 
 ## AI-motorn
-AI-motorn är programmet på restaurangens dator som läser kamerorna. Den måste vara igång för att något ska fungera.
+AI-motorn är programmet på restaurangens dator som läser kamerorna. Den måste vara igång för att kamerorna ska fungera.
 Den installeras med installationsprogrammet (install/install-mac.sh) och startar sedan av sig själv när datorn slås på.
-Den kopplas till restaurangen med en kopplingskod: ägaren skapar den i Inställningar → AI-datorn och klistrar in den när programmet installeras.
-Fungerar inte koden längre (t.ex. om en ny har skapats) skapar ägaren en ny och kör installationsprogrammet igen.
+Koppla datorn: datorn visar en kort kod på skärmen. Ägaren skriver in den i appen under Inställningar → AI-datorn → Koppla dator.
+Slutar kopplingen fungera (t.ex. om en ny kod har skapats) kopplar motorn om sig själv: en ny kod visas på datorn och skrivs in på samma ställe.
+Händer ingenting: kontrollera att datorn är påslagen och har internet. Starta om motorn i Terminal:
+launchctl kickstart -k gui/$(id -u)/se.bordvakt.engine
+Chatten (Vakti) körs också på datorn. Den installeras i samma installationsprogram (svara Ja på frågan om chatten).
+
+## Matsal: bordens färger och larm
+Matsal visar planritningen med varje bord i en färg efter vad AI:n ser:
+- Ledigt, Upptaget.
+- Behöver dukas av: gästerna har gått och bordet är inte avdukat.
+- Väntar på mat: gästerna har väntat längre än köket brukar behöva för rätterna (tidigare vid rusning).
+- Söker kontakt: en gäst räcker upp handen en stund. Inget larm när personal redan står vid bordet.
+- Dessertläge: maten är avplockad och gästerna sitter kvar. Föreslå dessert eller kaffe.
+- Vill betala: en stund efter avplockning, eller när gästerna plockar fram väskor och reser sig.
+- Akut läge (SOS): något har tappats eller spillts vid bordet.
+- Kameran ser inte bordet: kameran är skymd, mörk, suddig eller har flyttats.
+Varje larm blir en uppgift. Tryck Klar när den är gjord.
+Falsklarm: tryck Falsklarm om AI:n larmat fel (på SOS och Söker kontakt). Vid bord med flera falsklarm blir AI:n försiktigare.
+AI:n lär sig restaurangen: hur länge rätterna tar i köket, när gästerna brukar vilja betala och var dessert sällan beställs.
+
+## Övriga sidor
+- Kök: beställningarna till köket. Markera när maten är klar, då får personalen ett larm.
+- Entré: väntelistan vid dörren. Sidan larmar när ett bord som passar blir ledigt. Kräver supabase/012_growth.sql.
+- Statistik: sittningar, väntetider och hur ofta AI:n haft rätt.
+- Planritning: ändra borden i efterhand.
+
+## Inställningar
+Utseende, språk och larm gäller bara den enhet man står på. Varje platta och mobil kan ha egna val.
+- Utseende: Färg på knappar, Textstorlek (Normal, Stor, Extra stor), Färre animationer.
+- Språk: menyer, knappar och larm på 16 språk.
+- Arbete: Startsida efter inloggning, och att hålla skärmen vaken i Matsal och Kök.
+- Larm: Larmljud, Vibration, Testa ljudet, och Notiser när appen ligger i bakgrunden.
+- Lägg Bordvakt på hemskärmen: då öppnas appen som en vanlig app på plattan eller mobilen.
+- Funktioner → Anpassa funktioner: stäng av det restaurangen inte använder. Gäller alla i personalen.
+- Konto: Byt lösenord (minst 10 tecken).
+- AI-datorn: koppla datorn med koden som visas på den.
 
 # Vanliga problem
 - "Kunde inte ansluta": fel IP-adress, användare eller lösenord, eller kameran är avstängd. Kameran och datorn måste vara på samma nätverk. Testa adressen i VLC (Media -> Öppna nätverksström).
@@ -105,22 +140,28 @@ Fungerar inte koden längre (t.ex. om en ny har skapats) skapar ägaren en ny oc
 - "Bordet syns inte där det ska": kameran har flyttats eller något skymmer. Kalibrera om bordet.
 - "Bordet är inte kalibrerat": gör steg 4 för bordet.
 - "Kameran ger ingen bild": kameran är frånkopplad eller strömlös, eller nätverket är nere. Starta om kameran.
-- "AI-motorn är avstängd": starta AI-motorn på datorn (se ovan).
+- "AI-motorn är avstängd": AI-motorn når inte appen. Visar datorn en kod: skriv in den under Inställningar → AI-datorn. Annars: se AI-motorn ovan.
+- Vakti svarar inte: chatten är inte installerad eller startar. Den första frågan kan ta upp till en halv minut.
+- Inget larmljud: kontrollera Inställningar → Larm och att plattans ljud är på. Tryck "Testa ljudet".
+- Inga notiser på mobilen: slå på Notiser i Inställningar → Larm och tillåt notiser när mobilen frågar. På iPhone måste appen först läggas på hemskärmen.
 - Databasfel om saknade tabeller: kör filerna i mappen supabase/ i Supabase -> SQL Editor, i nummerordning.
 - Webbkamera på Mac: macOS frågar om kameratillstånd första gången. Tillåt Terminal/Python under Systeminställningar -> Integritet och säkerhet -> Kamera.
 """
 
 RULES = """\
-Du är Vakti, Bordvakts egen AI. Din ENDA uppgift är att hjälpa användaren att installera Bordvakt och
-lösa problem så att appen fungerar.
+Du är Vakti, Bordvakts egen AI. Din uppgift är att hjälpa restaurangen att installera Bordvakt,
+förstå hur appen fungerar och lösa problem.
 Regler:
 - Svara på {language}. Skriver användaren tydligt på ett annat språk: svara på det språket.
 - Svara kort: högst 5 meningar eller en kort numrerad lista. Ett steg i taget.
 - Utgå från INSTALLATIONENS LÄGE nedan. Det är sant just nu. Säg aldrig emot det.
+- Visar läget ett problem som hör ihop med frågan (t.ex. en kamera utan bild): börja med det.
+- Frågar användaren om ett bord: titta i läget efter bordets status och förklara vad den betyder.
 - Svara bara utifrån MANUALEN. Om svaret inte finns där: säg att du inte vet och föreslå att kontakta Bordvakts support. Hitta aldrig på knappar, menyer eller inställningar.
-- Frågor som inte handlar om att installera eller felsöka Bordvakt: svara vänligt att du bara hjälper till med att få igång appen.
+- Frågor som inte handlar om Bordvakt: svara vänligt att du bara hjälper till med Bordvakt.
 - Be aldrig om lösenord. Om användaren skriver ett lösenord: säg att det inte behövs i chatten.
 - Skriv inte rubriker. Vanlig text, och listor bara när det är steg.
+- Användaren ser inte manualen eller läget. Hänvisa aldrig till dem ("se manualen", "vanliga problem"): skriv själva stegen.
 """
 
 
@@ -148,12 +189,63 @@ def clean_messages(messages) -> list[dict]:
     return result
 
 
-def system_prompt(facts: str, language: str) -> str:
+# ------------------------------------------------------------ Rätt del av manualen
+# En liten modell svarar bättre (och snabbare) med det som rör frågan än med hela manualen.
+# Manualen delas i avsnitt; de som delar flest ord med frågan skickas med, upp till MANUAL_BUDGET tecken.
+
+MANUAL_BUDGET = 6000
+_WORD = re.compile(r"\w+")
+_STOP = {"och", "att", "det", "som", "en", "ett", "är", "på", "jag", "vi", "hur", "vad", "kan", "inte",
+         "för", "med", "till", "av", "den", "har", "om", "man", "så", "the", "and", "how", "what", "is", "to"}
+
+
+def _stems(text: str) -> set[str]:
+    """Ordens början (5 tecken), så att "kameran", "kameror" och "kamerorna" räknas som samma ord."""
+    return {w[:5] for w in (m.lower() for m in _WORD.findall(text)) if len(w) > 2 and w not in _STOP}
+
+
+def _sections(manual: str | None = None) -> list[str]:
+    manual = MANUAL if manual is None else manual
+    parts: list[str] = []
+    current: list[str] = []
+    for line in manual.splitlines(keepends=True):
+        if line.startswith(("# ", "## ")) and current:
+            parts.append("".join(current))
+            current = []
+        current.append(line)
+    if current:
+        parts.append("".join(current))
+    return [p for p in parts if p.strip()]
+
+
+def relevant_manual(question: str, budget: int = MANUAL_BUDGET, manual: str | None = None) -> str:
+    """Avsnitten som rör frågan mest, i manualens ordning. Ryms allt, eller känns inget
+    igen (t.ex. en fråga på ett annat språk), skickas hela manualen."""
+    manual = MANUAL if manual is None else manual
+    if len(manual) <= budget:
+        return manual
+    words = _stems(question)
+    sections = _sections(manual)
+    # Träffar per avsnitt, lite lägre för långa avsnitt (annars vinner alltid det längsta)
+    scored = sorted(((len(words & _stems(s)) / (1 + len(s) / 2000), i) for i, s in enumerate(sections)), reverse=True)
+    if not scored or scored[0][0] == 0:
+        return manual
+    chosen: set[int] = set()
+    used = 0
+    for score, i in scored:
+        if score == 0 or used + len(sections[i]) > budget:
+            continue
+        chosen.add(i)
+        used += len(sections[i])
+    return "".join(sections[i] for i in sorted(chosen))
+
+
+def system_prompt(facts: str, language: str, question: str = "") -> str:
     lang = LANGUAGES.get(language, LANGUAGES["sv"])
     return (
         RULES.format(language=lang)
         + "\n# INSTALLATIONENS LÄGE\n" + (str(facts).strip()[:MAX_FACTS] or "Okänt.")
-        + "\n\n# MANUALEN\n" + MANUAL
+        + "\n\n# MANUALEN\n" + relevant_manual(question)
     )
 
 
@@ -210,7 +302,9 @@ def open_chat(messages, facts: str, language: str = "sv"):
         "model": CHAT_MODEL,
         "stream": True,
         "keep_alive": KEEP_ALIVE,
-        "messages": [{"role": "system", "content": system_prompt(facts, language)}] + history,
+        # Manualen väljs efter de senaste frågorna (en följdfråga som "och sen?" har få egna ord)
+        "messages": [{"role": "system", "content": system_prompt(
+            facts, language, " ".join(m["content"] for m in history[-3:] if m["role"] == "user"))}] + history,
         "options": {"temperature": 0.2, "num_ctx": 8192, "num_predict": 400},
     }).encode()
     request = urllib.request.Request(f"{OLLAMA_URL}/api/chat", data=body,

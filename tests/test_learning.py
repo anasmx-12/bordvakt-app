@@ -78,7 +78,7 @@ class TableTest(unittest.TestCase):
     def eat_and_clear(self):
         self.feed(30, seen())
         self.feed(120, seen(dishes=2))
-        self.feed(10, seen())  # tallrikarna är bortplockade
+        self.feed(40, seen())  # tallrikarna är bortplockade (borta längre än CLEAR_CONFIRM_SEC)
 
 
 class BillDelayTest(TableTest):

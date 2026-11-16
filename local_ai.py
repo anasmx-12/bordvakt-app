@@ -92,6 +92,12 @@ RAISE_SEC = 2.0          # handen ska synas uppräckt i minst halva tiden av de 
 RAISE_SEC_CAREFUL = 4.0  # vid bord där handen ofta larmat fel: dubbelt så länge, och i 3/4 av tiden
 CAREFUL_MIN_FALSE = 2    # så många Falsklarm på Vill ha hjälp (14 dagar) innan bordet blir försiktigt
 RELEARN_WINDOW_SEC = 180  # efter "avdukat" från personalen: lär in bordet som rent inom så här lång tid
+# Tallrikarna ska vara borta så här länge innan maten räknas som avplockad. Kortare än så är det
+# oftast personal eller en gäst som skymmer bordet (och tallrikarna "kommer tillbaka" när de går).
+CLEAR_CONFIRM_SEC = float(os.environ.get("CLEAR_CONFIRM_SEC", "30"))
+# Personal står vid bordet (tar upp beställning, serverar): gästerna pekar och lyfter händerna,
+# men behöver ingen hjälp, personalen är ju redan där. Inget "Söker kontakt" då.
+STAFF_AT_TABLE_SHARE = 0.5  # personal i minst så stor del av de senaste sekunderna
 
 # Akut läge (SOS): en gäst har tappat ett glas eller en tallrik
 SOS_DETECTION = os.environ.get("SOS_DETECTION", "on").strip().lower() not in ("off", "0", "false", "nej")
@@ -631,6 +637,7 @@ class TableMemory:
         self.served_at: float | None = None
         self.food_seen = False
         self.cleared_since: float | None = None
+        self.clear_pending: float | None = None  # tallrikarna försvann (bekräftas efter CLEAR_CONFIRM_SEC)
         self.dessert_done = False
         self.last_status = "AVAILABLE"
         self.clean_streak = 0  # antal analyser i rad som bordet varit ledigt och rent
@@ -679,6 +686,7 @@ class TableMemory:
         self.served_at = None
         self.food_seen = False
         self.cleared_since = None
+        self.clear_pending = None
         self.dessert_done = False
         self.peak_guests = 0
         self.cleared_bags = 0
@@ -747,7 +755,9 @@ class TableMemory:
             self.base_clutter = clutter
         self.peak_guests = max(self.peak_guests, int(guests))
 
-        if raised:
+        # Personal vid bordet: en uppräckt hand är en gäst som beställer eller pekar, inget larm
+        staff_share = sum(1 for o in self.history if o.standing >= 1) / len(self.history)
+        if raised and staff_share < STAFF_AT_TABLE_SHARE:
             return "NEEDS_ATTENTION"
 
         # Beställningarna i appen är säkrare än kameran
@@ -767,6 +777,7 @@ class TableMemory:
             self.served = self.food_seen = True
             self.served_at = self.served_at or now
             self.cleared_since = None
+            self.clear_pending = None  # tallrikarna var bara skymda
             self.bill_done = False  # ny mat (t.ex. dessert): notan är inte lämnad för den
             return "OCCUPIED"
 
@@ -788,8 +799,14 @@ class TableMemory:
 
         # Maten har serverats och plockats bort
         if self.cleared_since is None:
-            self.cleared_since = now
-            self.cleared_at = self.cleared_at or now
+            if self.food_seen:
+                # Kameran såg tallrikarna: de ska vara borta en stund, annars är de bara skymda
+                self.clear_pending = self.clear_pending or now
+                if now - self.clear_pending < CLEAR_CONFIRM_SEC:
+                    return "OCCUPIED"
+            self.cleared_since = self.clear_pending or now  # räknas från när tallrikarna försvann
+            self.clear_pending = None
+            self.cleared_at = self.cleared_at or self.cleared_since
             self.cleared_bags = int(median(o.bags for o in self.history))
         if self._wants_bill(now, guests, orders):
             return WANTS_BILL

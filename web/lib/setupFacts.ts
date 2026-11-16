@@ -57,7 +57,7 @@ export function describeSetup(
   lines.push(
     engine
       ? `AI-motorn: igång${engine.ai_enabled ? '' : ', men bevakningen är avstängd (service-nyckeln saknas i .env)'}.`
-      : 'AI-motorn: INTE igång. Då fungerar inga kameror. Kontrollera att AI-datorn är påslagen och har internet. Starta om motorn i Terminal: launchctl kickstart -k gui/$(id -u)/se.bordvakt.engine'
+      : 'AI-motorn: når INTE appen. Då fungerar inga kameror. Visar AI-datorn en kod: skriv in den under Inställningar → AI-datorn → Koppla dator. Annars: kontrollera att datorn är påslagen och har internet, och starta om motorn i Terminal: launchctl kickstart -k gui/$(id -u)/se.bordvakt.engine'
   );
   for (const b of blind.slice(0, 10)) {
     lines.push(`Problem: kameran ser inte bord ${b.table_number}${b.camera_issue ? ` (${b.camera_issue})` : ''}.`);
@@ -65,9 +65,33 @@ export function describeSetup(
   return lines.join('\n');
 }
 
+const STATUS_NAMES: Record<string, string> = {
+  AVAILABLE: 'Ledigt',
+  OCCUPIED: 'Upptaget',
+  AWAITING_FOOD: 'Väntar på mat',
+  NEEDS_ATTENTION: 'Söker kontakt',
+  NEEDS_CLEANING: 'Behöver dukas av',
+  DESSERT_OPPORTUNITY: 'Dessertläge',
+  CAMERA_BLIND: 'Kameran ser inte bordet',
+  EMERGENCY: 'Akut läge (SOS)',
+  WANTS_BILL: 'Vill betala',
+};
+
+/** Matsalen just nu, så att Vakti kan svara på "varför är bord 4 rött?". Bara nummer och status. */
+export function describeDining(tables: { table_number: number; status: string }[]): string {
+  if (!tables.length) return '';
+  const groups = new Map<string, number[]>();
+  for (const t of tables) groups.set(t.status, [...(groups.get(t.status) ?? []), t.table_number]);
+  const lines = ['Matsalen just nu (bordens status):'];
+  for (const [status, numbers] of groups) {
+    lines.push(`- ${STATUS_NAMES[status] ?? status}: bord ${numbers.sort((a, b) => a - b).slice(0, 30).join(', ')}`);
+  }
+  return lines.join('\n');
+}
+
 /** Läser allt Vakti behöver veta om restaurangens installation. */
 export async function setupFacts(supabase: SupabaseClient, restaurantId: string): Promise<string> {
-  const [status, cameras, blind, engine] = await Promise.all([
+  const [status, cameras, blind, engine, dining] = await Promise.all([
     supabase.rpc('setup_status', { p_restaurant_id: restaurantId }).then(({ data }) => data as SetupStatus | null),
     supabase
       .from('camera_feeds')
@@ -81,8 +105,15 @@ export async function setupFacts(supabase: SupabaseClient, restaurantId: string)
       .eq('status', 'CAMERA_BLIND')
       .then(({ data }) => (data ?? []) as { table_number: number; camera_issue: string | null }[]),
     engineStatus(restaurantId),
+    supabase
+      .from('tables')
+      .select('table_number,status')
+      .eq('restaurant_id', restaurantId)
+      .order('table_number')
+      .limit(200)
+      .then(({ data }) => (data ?? []) as { table_number: number; status: string }[]),
   ]);
-  const facts = describeSetup(status, cameras, engine, blind);
+  const facts = [describeSetup(status, cameras, engine, blind), describeDining(dining)].filter(Boolean).join('\n');
   // Menyn (steg 5, valfritt). Saknas kolumnerna är 010 inte körd.
   const [{ data: r, error }, { count }] = await Promise.all([
     supabase.from('restaurants').select('qr_ordering, menu_step_done').eq('id', restaurantId).maybeSingle(),
