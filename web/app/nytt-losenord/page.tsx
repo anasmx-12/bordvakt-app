@@ -10,7 +10,7 @@ export const metadata = { title: 'Nytt lösenord · Bordvakt', robots: { index: 
 
 export default function NewPassword({ searchParams }: { searchParams: Promise<{ t?: string }> }) {
   return (
-    <main className="flex min-h-screen flex-1 items-center justify-center bg-paper px-4 py-12">
+    <main className="aurora-bg flex min-h-screen flex-1 items-center justify-center px-4 py-12">
       <div className="stagger flex w-full max-w-[420px] flex-col gap-6">
         <Link href="/" aria-label="Bordvakt – till startsidan" className="self-center">
           <Logo />

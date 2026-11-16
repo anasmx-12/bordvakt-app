@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { useEngineStatus } from '@/lib/useEngineStatus';
 import { useT, type Key } from '@/lib/i18n';
 import Logo from './Logo';
+import Photo from './Photo';
 import SetupChat from './SetupChat';
 import SetupGate from './SetupGate';
 import SupportAccessBanner from './SupportAccessBanner';
@@ -68,7 +69,7 @@ export default function AppShell({ title, subtitle, actions, children }: Props) 
   return (
     <div className="flex min-h-screen w-full">
       {/* Sidomeny (dator) */}
-      <aside className="sticky top-0 hidden h-screen w-[232px] flex-none flex-col border-r border-line bg-white lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-[232px] flex-none flex-col border-r border-line bg-[linear-gradient(180deg,#0B2B45,#071F33)] lg:flex">
         <Link href="/matsal" aria-label={t('nav.toDining')} className="px-5 pb-6 pt-5">
           <Logo />
         </Link>
@@ -81,7 +82,7 @@ export default function AppShell({ title, subtitle, actions, children }: Props) 
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={`group relative flex min-h-10 items-center gap-3 rounded-lg px-3 text-[14px] font-semibold transition-colors ${
-                  active ? 'text-white' : 'text-body hover:bg-paper hover:text-ink'
+                  active ? 'text-white' : 'text-body hover:bg-white/[.04] hover:text-ink'
                 }`}
               >
                 {/* Den mörka markeringen glider till den valda sidan */}
@@ -89,10 +90,14 @@ export default function AppShell({ title, subtitle, actions, children }: Props) 
                   <motion.span
                     layoutId="nav-active"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                    className="absolute inset-0 rounded-lg bg-ink"
+                    className="absolute inset-0 rounded-lg before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-r-full before:bg-coral before:shadow-[0_0_10px_#FC734D] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-accent)_30%,#0B1B26),color-mix(in_srgb,var(--color-accent)_14%,#07131B))] shadow-[inset_0_1px_0_rgba(255,255,255,.08),inset_0_0_0_1px_color-mix(in_srgb,var(--color-accent)_40%,transparent),0_8px_20px_-10px_color-mix(in_srgb,var(--color-accent)_60%,transparent)]"
                   />
                 )}
-                <Icon className="relative h-[18px] w-[18px] transition-transform duration-200 group-hover:scale-110" strokeWidth={2} />
+                <Icon
+                  key={active ? 'on' : 'off'}
+                  className={`relative h-[18px] w-[18px] transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-6 ${active ? 'icon-bounce text-accent-light drop-shadow-[0_0_6px_var(--color-accent)]' : ''}`}
+                  strokeWidth={2}
+                />
                 <span className="relative">{t(label)}</span>
               </Link>
             );
@@ -183,7 +188,7 @@ export default function AppShell({ title, subtitle, actions, children }: Props) 
                 <motion.span
                   layoutId="tab-active"
                   transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  className="absolute inset-x-3 top-0 h-[3px] rounded-b-full bg-accent"
+                  className="absolute inset-x-3 top-0 h-[3px] rounded-b-full bg-[linear-gradient(90deg,var(--color-accent),#FC734D)] shadow-[0_2px_10px_color-mix(in_srgb,var(--color-accent)_70%,transparent)]"
                 />
               )}
               <motion.span animate={{ scale: active ? 1.12 : 1, y: active ? -1 : 0 }} transition={{ type: 'spring', stiffness: 500, damping: 25 }}>
@@ -206,7 +211,8 @@ export default function AppShell({ title, subtitle, actions, children }: Props) 
 function FeatureOff() {
   const t = useT();
   return (
-    <div className="card flex max-w-[560px] flex-col items-start gap-3 p-6">
+    <div className="card flex max-w-[560px] flex-col items-start gap-3 overflow-hidden p-6">
+      <Photo src="/photos/sauce.jpg" alt="" className="-mx-6 -mt-6 mb-2 h-40 w-[calc(100%+3rem)]" position="center 40%" />
       <h2 className="font-display text-xl font-bold">{t('off.title')}</h2>
       <p className="text-body">{t('off.text')}</p>
       <Link href="/settings/funktioner" className="btn btn-secondary">

@@ -274,7 +274,7 @@ export default function EntrancePage() {
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: 40 }}
-                  className={`card flex flex-col gap-3 p-4 ${notified ? 'border-teal ring-1 ring-teal' : match && p.status === 'WAITING' ? 'border-[#9FD0C8]' : ''}`}
+                  className={`card flex flex-col gap-3 p-4 ${notified ? 'border-teal ring-1 ring-teal' : match && p.status === 'WAITING' ? 'border-[#1D5A55]' : ''}`}
                 >
                   <div className="flex items-start gap-3">
                     <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-paper font-bold">{i + 1}</span>

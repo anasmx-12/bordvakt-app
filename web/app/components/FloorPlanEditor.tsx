@@ -261,14 +261,14 @@ export default function FloorPlanEditor({ onSaved }: Props) {
   return (
     <div className="flex w-full flex-col">
         {error && (
-          <div role="alert" className="mb-5 rounded-lg border border-[#F3C9B0] bg-[#FDF1EA] px-4 py-3 text-sm text-[#7C2D12]">
+          <div role="alert" className="mb-5 rounded-lg border border-[#5A2A1C] bg-[#2A1510] px-4 py-3 text-sm text-[#FFB39E]">
             {error}
           </div>
         )}
         {notice && (
           <div
             role="status"
-            className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#B9DAD4] bg-teal-light px-4 py-3 text-sm text-[#0F5C55]"
+            className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#1D5A55] bg-teal-light px-4 py-3 text-sm text-[#7EE0D2]"
           >
             <span className="flex items-center gap-2">
               <Check className="h-5 w-5" /> {notice}

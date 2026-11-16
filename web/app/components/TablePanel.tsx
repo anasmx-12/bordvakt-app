@@ -126,7 +126,7 @@ export default function TablePanel({ table, live, orders, ordersAvailable, onClo
                       initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: 40 }}
-                      className={`flex flex-col gap-2.5 rounded-lg border p-3 ${ready ? 'border-[#9FD0C8] bg-teal-light' : 'border-line'}`}
+                      className={`flex flex-col gap-2.5 rounded-lg border p-3 ${ready ? 'border-[#1D5A55] bg-teal-light' : 'border-line'}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-semibold">{orderSummary(order, t('order.empty'))}</p>

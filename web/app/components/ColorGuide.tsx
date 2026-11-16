@@ -13,7 +13,7 @@ export const LEGEND: { label: Key; action: Key; className: string }[] = [
   { label: 'status.DESSERT_OPPORTUNITY', action: 'guide.DESSERT', className: 'bg-dessert' },
   { label: 'map.legendFoodReady', action: 'guide.food', className: 'bg-teal' },
   { label: 'status.OCCUPIED', action: 'guide.OCCUPIED', className: 'bg-blue-100 border border-blue-300' },
-  { label: 'status.AVAILABLE', action: 'guide.AVAILABLE', className: 'bg-teal-light border border-[#7DBDB4]' },
+  { label: 'status.AVAILABLE', action: 'guide.AVAILABLE', className: 'bg-teal-light border border-[#237069]' },
   { label: 'status.CAMERA_BLIND', action: 'guide.BLIND', className: STATUS_STYLE.CAMERA_BLIND.table },
 ];
 

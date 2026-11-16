@@ -14,7 +14,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 const VERIFY_EMAIL = '/verifiera-epost';
-const PUBLIC = new Set(['/login', '/signup', '/api/signup', '/api/billing/webhook', '/villkor', '/integritet', '/pub-avtal', '/nytt-losenord', '/api/password-reset']);
+const PUBLIC = new Set(['/login', '/signup', '/api/signup', '/api/billing/webhook', '/villkor', '/integritet', '/pub-avtal', '/nytt-losenord', '/api/password-reset', '/api/demo']);
 // Inloggad men utan prenumeration: får välja plan och betala
 const BILLING = new Set([
   '/billing',
@@ -43,6 +43,8 @@ const LIMITS: [prefix: string, write: number, read: number][] = [
   ['/api/engine/pair', 5, 60],
   // AI-datorn ber om en kod och frågar var 4:e sekund om den är godkänd
   ['/api/engine/device/start', 5, 30],
+  // Demoformuläret på landningssidan (öppet för alla)
+  ['/api/demo', 3, 10],
   ['/api/engine/device/poll', 40, 40],
   ['/api/engine/device/approve', 10, 30],
   // Kameraguiden: sökningen i restaurangens nät, och lösenordsförsök mot kamerorna (de kan låsa sig)

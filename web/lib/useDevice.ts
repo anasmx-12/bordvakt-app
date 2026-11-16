@@ -80,7 +80,12 @@ export function useWakeSetting() {
     readWake,
     () => false
   );
-  const supported = typeof navigator !== 'undefined' && 'wakeLock' in navigator;
+  // Samma värde på servern och vid första ritningen, sedan webbläsarens svar (inget hydreringsfel)
+  const supported = useSyncExternalStore(
+    () => () => {},
+    () => 'wakeLock' in navigator,
+    () => false
+  );
   function set(value: boolean) {
     try {
       localStorage.setItem(WAKE_KEY, value ? '1' : '0');

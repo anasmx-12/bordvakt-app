@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Camera, Check, CheckCircle2, Circle, Loader2, Plug, Trash2, XCircle } from 'lucide-react';
 import AppShell from '../components/AppShell';
+import Photo from '../components/Photo';
 import Banner from '../components/Banner';
 import FloorPlan from '../components/FloorPlan';
 import FloorPlanEditor from '../components/FloorPlanEditor';
@@ -153,6 +154,18 @@ export default function SetupWizard() {
         </>
       }
     >
+        {/* Foto överst: påminner om vad installationen leder till */}
+        <Photo
+          src="/photos/dining.jpg"
+          alt="En restaurang i kvällsljus med gäster vid borden"
+          className="mb-5 h-36 rounded-2xl border border-line sm:h-44"
+          position="center 55%"
+          priority
+        >
+          <p className="font-display text-lg font-bold text-white drop-shadow sm:text-xl">Snart vet personalen alltid vart de ska gå.</p>
+          <p className="text-sm text-[#FFD2C4]">Följ stegen nedan: planritning, kameror och bord.</p>
+        </Photo>
+
         {dbError && (
           <div className="mb-5">
             <Banner role="alert" title="Databasen behöver uppdateras">
@@ -203,7 +216,7 @@ export default function SetupWizard() {
                         onClick={() => setStep(s.id)}
                         aria-current={active ? 'step' : undefined}
                         className={`flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-semibold transition-colors enabled:hover:bg-paper disabled:cursor-not-allowed ${
-                          active ? 'text-ink' : done ? 'text-[#0F5C55]' : 'text-muted'
+                          active ? 'text-ink' : done ? 'text-[#7EE0D2]' : 'text-muted'
                         }`}
                       >
                         <span
@@ -837,7 +850,7 @@ function CalibrateStep({
               <p
                 role="status"
                 className={`flex items-start gap-2 rounded-lg p-3 text-sm ${
-                  message.ok ? 'bg-teal-light text-[#0F5C55]' : 'bg-red-50 text-red-700'
+                  message.ok ? 'bg-teal-light text-[#7EE0D2]' : 'bg-red-50 text-red-700'
                 }`}
               >
                 {message.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none" /> : <XCircle className="mt-0.5 h-4 w-4 flex-none" />}
@@ -943,7 +956,7 @@ function RoiDrawer({
 
   if (engineReachable === false) {
     return (
-      <p className="rounded-xl bg-[#FDF1EA] p-6 text-sm text-accent-dark">
+      <p className="rounded-xl bg-[#2A1510] p-6 text-sm text-accent-dark">
         AI-motorn svarar inte, så kamerabilden kan inte visas. Kontrollera att AI-datorn är påslagen och har internet.
       </p>
     );
@@ -1045,10 +1058,10 @@ function DoneStep({ status, onGoTo }: { status: SetupStatus; onGoTo: (s: Step) =
     );
   }
   return (
-    <section className="flex max-w-[620px] flex-col items-start gap-3 rounded-xl border border-[#B9DAD4] bg-teal-light p-6">
+    <section className="flex max-w-[620px] flex-col items-start gap-3 rounded-xl border border-[#1D5A55] bg-teal-light p-6">
       <CheckCircle2 className="h-10 w-10 text-teal" />
       <h2 className="font-display text-2xl font-bold">Allt är klart</h2>
-      <p className="text-[#1F3B38]">
+      <p className="text-[#A9C9C4]">
         {status.restaurant_name} har {status.plan_tables} bord och {status.cameras} kamera(or). Alla bord är
         kalibrerade och AI:n bevakar dem nu.
       </p>

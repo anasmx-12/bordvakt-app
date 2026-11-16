@@ -36,7 +36,12 @@ export async function POST(req: Request) {
       const data = await res.json().catch(() => ({}));
       if (res.status === 403) throw new UserError(data.error ?? 'AI-motorn nekade anropet.', 502);
       return Response.json(
-        { error: data.error ?? 'Vakti kunde inte svara.', fallback: res.status === 503 || res.status === 404 },
+        {
+          error: data.error ?? 'Vakti kunde inte svara.',
+          fallback: res.status === 503 || res.status === 404,
+          // Ollama eller språkmodellen saknas på datorn: Vakti säger hur chatten installeras
+          notInstalled: data.code === 'not_installed',
+        },
         { status: res.status === 400 ? 400 : 503 }
       );
     }

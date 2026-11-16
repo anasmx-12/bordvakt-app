@@ -29,7 +29,7 @@ export default function IdentityStep({ identity, onReady }: { identity: Identity
     return (
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-teal-light px-4 py-3">
-          <p className="flex items-center gap-2 text-[15px] font-semibold text-[#134E48]">
+          <p className="flex items-center gap-2 text-[15px] font-semibold text-[#7EE0D2]">
             <BadgeCheck className="h-5 w-5 flex-none text-teal" /> {identity.legal_name}
           </p>
           <button type="button" onClick={() => setEditing(true)} className="btn btn-ghost btn-sm">

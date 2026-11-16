@@ -141,7 +141,7 @@ function BillingView() {
     return (
       <div className="card flex flex-col gap-5 p-6 sm:p-8">
         {justPaid && (
-          <div className="flex items-start gap-3 rounded-lg border border-[#B9DAD4] bg-teal-light p-4 text-[#134E48]">
+          <div className="flex items-start gap-3 rounded-lg border border-[#1D5A55] bg-teal-light p-4 text-[#7EE0D2]">
             <CheckCircle2 className="h-6 w-6 flex-none text-teal" />
             <div>
               <p className="font-semibold text-ink">{trialing ? 'Provperioden har startat!' : 'Tack för betalningen!'}</p>
@@ -300,7 +300,7 @@ function CardNameMismatch({ identity, busy, onPortal, onChanged }: {
 
 export default function BillingPage() {
   return (
-    <main className="flex min-h-screen flex-1 items-center justify-center bg-paper px-4 py-12">
+    <main className="aurora-bg flex min-h-screen flex-1 items-center justify-center px-4 py-12">
       <div className="stagger flex w-full max-w-[520px] flex-col gap-6">
         <div className="flex items-center justify-between">
           <Link href="/" aria-label="Bordvakt – till startsidan">

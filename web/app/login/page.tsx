@@ -76,7 +76,7 @@ export default function LoginPage() {
 
   if (needsCode) {
     return (
-      <main className="flex min-h-screen flex-1 items-center justify-center bg-paper px-4 py-12">
+      <main className="aurora-bg flex min-h-screen flex-1 items-center justify-center px-4 py-12">
         <div className="stagger flex w-full max-w-[440px] flex-col gap-6">
           <Link href="/" aria-label={t('login.toStart')} className="self-center">
             <Logo />
@@ -91,12 +91,12 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-1 items-center justify-center bg-paper px-4 py-12">
+    <main className="aurora-bg flex min-h-screen flex-1 items-center justify-center px-4 py-12">
       <div className="stagger flex w-full max-w-[400px] flex-col gap-6">
         <Link href="/" aria-label={t('login.toStart')} className="self-center">
           <Logo />
         </Link>
-        <form onSubmit={submit} className="card flex flex-col gap-5 p-6 sm:p-8">
+        <form onSubmit={submit} className="card glow-border flex flex-col gap-5 p-6 sm:p-8">
           <div>
             <h1 className="font-display text-2xl font-bold tracking-[-0.02em]">{t('login.title')}</h1>
             <p className="mt-1 text-[15px] text-body">{t('login.subtitle')}</p>
@@ -129,7 +129,7 @@ export default function LoginPage() {
             />
           </label>
 
-          <button type="submit" disabled={busy} className="btn btn-lg btn-primary">
+          <button type="submit" disabled={busy} className="btn btn-lg btn-accent">
             {busy ? t('login.busy') : t('login.title')}
           </button>
         </form>

@@ -6,7 +6,7 @@ import { useSyncExternalStore } from 'react';
 // kan ha sitt eget språk, tema och ljud.
 
 export type Theme = 'light' | 'dark' | 'system';
-export type Accent = 'orange' | 'blue' | 'green' | 'purple' | 'graphite';
+export type Accent = 'orange' | 'coral' | 'blue' | 'green' | 'purple' | 'graphite';
 export type TextSize = 'normal' | 'large' | 'xlarge';
 export type StartPage = '/matsal' | '/kitchen';
 export type Language =

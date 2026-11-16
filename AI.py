@@ -44,6 +44,7 @@ import local_menu  # noqa: E402
 import camera_discovery  # noqa: E402
 import engine_security as sec  # noqa: E402
 import engine_tunnel  # noqa: E402
+import engine_pairing  # noqa: E402
 
 
 def read_env(name: str) -> str:
@@ -59,14 +60,18 @@ SUPABASE_ANON_KEY = read_env("SUPABASE_ANON_KEY")
 # service-nyckel: datorn loggar in med ett eget konto som bara når den egna restaurangen.
 ENGINE_CODE = sec.parse_code(os.environ.get("ENGINE_CODE", ""))
 if os.environ.get("ENGINE_CODE", "").strip() and not ENGINE_CODE:
-    raise SystemExit("Fel: ENGINE_CODE i .env är trasig. Skapa en ny i webbappen: Inställningar → AI-datorn.")
+    # Trasig kod: koppla om datorn i stället för att krascha (launchd skulle annars starta om i en loop)
+    print("ENGINE_CODE i .env är trasig. Kopplar om datorn ...")
+    engine_pairing.pair_and_restart()
 if ENGINE_CODE:
     SUPABASE_URL, SUPABASE_ANON_KEY = ENGINE_CODE["u"], ENGINE_CODE["a"]
     if SUPABASE_SERVICE_KEY:
         print("Obs: ENGINE_CODE används. Ta bort SUPABASE_SERVICE_KEY ur .env, den behövs inte längre.")
         SUPABASE_SERVICE_KEY = ""
 if not SUPABASE_URL or not (SUPABASE_SERVICE_KEY or SUPABASE_ANON_KEY):
-    raise SystemExit("Fel: SUPABASE_URL och SUPABASE_SERVICE_KEY (eller SUPABASE_ANON_KEY) måste fyllas i i .env.")
+    # Ingen koppling alls (t.ex. ny dator): koppla den automatiskt
+    print("Datorn är inte kopplad till någon restaurang än.")
+    engine_pairing.pair_and_restart()
 
 # Analysen kräver att datorn får spara statusar: kopplingskoden (eller service-nyckeln)
 CAN_WRITE = bool(ENGINE_CODE or SUPABASE_SERVICE_KEY)
@@ -335,7 +340,7 @@ class StreamHandler(BaseHTTPRequestHandler):
                 self.send_json(200, local_chat.summarize_ticket(
                     str(body.get("topic", "")), str(body.get("message", "")), str(body.get("facts", ""))))
             except local_chat.ChatUnavailable as e:
-                self.send_json(503, {"error": str(e)})
+                self.send_json(503, {"error": str(e), "code": e.code})
             return
         if local_model is None:
             self.send_json(503, {"error": "AI:n startar fortfarande. Försök igen om en stund."})
@@ -443,7 +448,7 @@ class StreamHandler(BaseHTTPRequestHandler):
             return
         except local_chat.ChatUnavailable as e:
             print(f"Chatten: {e}")
-            self.send_json(503, {"error": str(e)})
+            self.send_json(503, {"error": str(e), "code": e.code})
             return
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
@@ -1133,6 +1138,11 @@ def main():
         try:
             sign_in()
         except Exception as e:
+            if "invalid login credentials" in str(e).lower():
+                # Koden har bytts ut i webbappen (eller kontot tagits bort): koppla om automatiskt.
+                # Nätverksfel o.d. hamnar inte här, då räcker det att launchd försöker igen.
+                print(f"Kopplingskoden godtas inte längre ({e}). Kopplar om datorn ...")
+                engine_pairing.pair_and_restart(ENGINE_CODE)
             raise SystemExit(
                 f"Fel: kunde inte logga in med kopplingskoden ({e}).\n"
                 "Koden kan ha bytts ut. Skapa en ny i webbappen: Inställningar → AI-datorn."

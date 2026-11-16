@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Settings2, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/lib/i18n';
-import Vakti from './Vakti';
+import Photo from './Photo';
 import { requiredDone } from '@/lib/setupProgress';
 
 const REDIRECT_SEC = 5;
@@ -56,9 +56,9 @@ export default function SetupGate() {
         initial={{ opacity: 0, y: 16, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
-        className="flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border border-line bg-white p-6 text-center shadow-[0_24px_48px_-16px_rgba(15,20,25,.5)]"
+        className="flex w-full max-w-sm flex-col items-center gap-4 overflow-hidden rounded-2xl border border-line bg-white p-6 pt-0 text-center shadow-[0_30px_60px_-20px_rgba(0,0,0,.6),0_0_0_1px_rgba(2,151,222,.15)]"
       >
-        <Vakti mood="worried" size={72} />
+        <Photo src="/photos/waiter.jpg" alt="" className="-mx-6 mb-1 h-36 w-[calc(100%+3rem)]" position="center 35%" priority />
         <h2 id="setup-gate-title" className="font-display text-xl font-bold">
           {t('gate.title')}
         </h2>

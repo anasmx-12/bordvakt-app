@@ -34,7 +34,7 @@ export default function TableGrid({ tables, liveTableIds, problem, selectedTable
           {t('grid.noTables')}
         </p>
       ) : liveTableIds.size === 0 ? (
-        <div className="flex items-start gap-3 rounded-xl border border-[#F3C9B0] bg-[#FDF1EA] p-4">
+        <div className="flex items-start gap-3 rounded-xl border border-[#5A2A1C] bg-[#2A1510] p-4">
           <CameraOff className="mt-0.5 h-5 w-5 flex-none text-accent-dark" strokeWidth={1.8} />
           <div>
             <p className="font-display font-bold text-ink">{t('grid.cantLoad')}</p>

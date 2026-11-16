@@ -6,7 +6,7 @@ export const COMPANY = {
   address: '', // gatuadress, postnummer och ort
   email: '', // t.ex. hej@bordvakt.se
   /** Var databasen ligger (Supabase-projektets region), t.ex. "EU (Irland)" */
-  dataRegion: '',
+  dataRegion: 'EU (Irland, eu-west-1)',
   updated: '2026-11-06',
 };
 

@@ -43,7 +43,7 @@ export default function TicketThread({
       </div>
 
       {ticket.scheduled_at && ticket.status === 'SCHEDULED' && (
-        <p className="flex items-center gap-2 rounded-lg bg-teal-light px-3 py-2 text-sm font-semibold text-[#0F5C55]">
+        <p className="flex items-center gap-2 rounded-lg bg-teal-light px-3 py-2 text-sm font-semibold text-[#7EE0D2]">
           <CalendarCheck className="h-4 w-4" /> Bokad: {when(ticket.scheduled_at)}
         </p>
       )}

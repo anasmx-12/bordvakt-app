@@ -119,10 +119,10 @@ export default function SupportPage() {
         )}
 
         {sent !== null ? (
-          <section className="flex flex-col items-start gap-3 rounded-xl border border-[#B9DAD4] bg-teal-light p-6">
+          <section className="flex flex-col items-start gap-3 rounded-xl border border-[#1D5A55] bg-teal-light p-6">
             <CheckCircle2 className="h-9 w-9 text-teal" />
             <h2 className="font-display text-xl font-bold">Ärende #{sent} är skickat</h2>
-            <p className="text-[#1F3B38]">
+            <p className="text-[#A9C9C4]">
               Vi har mejlat en bekräftelse till {email}. Supporten hör av sig, oftast inom en arbetsdag. Behöver vi komma till er
               föreslår vi några dagar som ni väljer mellan här nedan eller via länken i mejlet.
             </p>

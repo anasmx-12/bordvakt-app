@@ -1,26 +1,31 @@
 @import "tailwindcss";
 
-/* Bordvakts designsystem: samma färger och typsnitt som webbplatsen.
-   Färgerna är vanliga CSS-variabler (inte "inline"), så att färgtema kan bytas i Inställningar. */
+/* Bordvakts designsystem. Mörkt: #02070A (natt), #0297DE (Bordvakt-blå), #FC734D (korall, sparsamt).
+   Färgerna är vanliga CSS-variabler (inte "inline"), så att färgtema kan bytas i Inställningar.
+   OBS: "ink" är nu den LJUSA textfärgen och "paper" den mörka bakgrunden. */
 @theme {
-  --color-ink: #0f1419;        /* mörk text, mörka kort */
-  --color-ink-soft: #1a1f26;   /* ram runt surfplattevyn */
-  --color-paper: #f6f5f1;      /* varm bakgrund */
-  --color-paper-soft: #faf9f6; /* ljusare panel */
-  --color-line: #e4e2db;       /* kantlinjer */
-  --color-line-soft: #eeece6;
-  --color-body: #374151;       /* brödtext */
-  --color-muted: #4b5563;      /* etiketter */
-  --color-accent: #c2410c;     /* orange huvudknapp */
-  --color-accent-dark: #9a3412;
-  --color-accent-light: #fdba74;
-  --color-teal: #0f766e;       /* live / ok */
-  --color-teal-light: #e6f2f0;
-  /* Dessertläge. Hex i stället för Tailwinds orange, som ligger utanför vanliga
-     skärmars färgomfång och kunde visas grönt. */
-  --color-dessert: #fb923c;
-  --color-dessert-dark: #ea580c;
-  --color-dessert-light: #fff1e6;
+  --color-ink: #EAF4FA;        /* rubriker och viktig text */
+  --color-ink-soft: #0E2A40;   /* ram runt surfplattevyn */
+  --color-paper: #061B2B;      /* sidans bakgrund: djup marinblå, inte svart */
+  --color-paper-soft: #0A2336; /* panel strax ovanför bakgrunden */
+  --color-surface: #0C2940;    /* kort och fält */
+  --color-surface-2: #11334E;  /* upphöjd yta, t.ex. knappar */
+  --color-line: #1C4260;       /* kantlinjer */
+  --color-line-soft: #153550;
+  --color-body: #C2D4E0;       /* brödtext */
+  --color-muted: #8FA9BB;      /* etiketter */
+  --color-accent: #0297DE;     /* blå huvudknapp */
+  --color-accent-dark: #0275B0;
+  --color-accent-light: #5CC8F5;
+  --color-coral: #FC734D;      /* andra accentfärgen */
+  --color-coral-dark: #E2552E;
+  --color-coral-light: #3A2220;
+  --color-teal: #0F9384;       /* live / ok */
+  --color-teal-light: #0D3336;
+  /* Dessertläge i korall */
+  --color-dessert: #FC734D;
+  --color-dessert-dark: #E2552E;
+  --color-dessert-light: #3A2220;
 }
 
 @theme inline {
@@ -31,21 +36,13 @@
 /* ------------------------------------------------------------------
    Inställningar (sätts på <html> av SettingsProvider)                */
 
-/* Färgtema: huvudknapparnas färg */
-html[data-accent="blue"] { --color-accent: #1d4ed8; --color-accent-dark: #1e3a8a; --color-accent-light: #93c5fd; }
-html[data-accent="green"] { --color-accent: #15803d; --color-accent-dark: #14532d; --color-accent-light: #86efac; }
-html[data-accent="purple"] { --color-accent: #7e22ce; --color-accent-dark: #581c87; --color-accent-light: #d8b4fe; }
-html[data-accent="graphite"] { --color-accent: #374151; --color-accent-dark: #111827; --color-accent-light: #9ca3af; }
-
-/* Mörkt tema: hela sidan inverteras (färgtonerna behålls), bilder och video
-   inverteras tillbaka så att kamerabilden ser normal ut. */
-html[data-theme="dark"] {
-  filter: invert(1) hue-rotate(180deg);
-  background: #fff;
-}
-html[data-theme="dark"] :is(img, video, canvas, [data-keep-colors]) {
-  filter: invert(1) hue-rotate(180deg);
-}
+/* Färgtema: huvudknapparnas färg. "orange" är standardvalet och betyder
+   Bordvakt-blått (namnet finns kvar för att sparade inställningar ska fungera). */
+html[data-accent="coral"] { --color-accent: #FC734D; --color-accent-dark: #E2552E; --color-accent-light: #FFB8A3; }
+html[data-accent="blue"] { --color-accent: #3B6FF5; --color-accent-dark: #2450C9; --color-accent-light: #9DB8FF; }
+html[data-accent="green"] { --color-accent: #16A34A; --color-accent-dark: #15803D; --color-accent-light: #86EFAC; }
+html[data-accent="purple"] { --color-accent: #9333EA; --color-accent-dark: #7E22CE; --color-accent-light: #D8B4FE; }
+html[data-accent="graphite"] { --color-accent: #64748B; --color-accent-dark: #475569; --color-accent-light: #CBD5E1; }
 
 /* Större text: förstorar innehållet (menyn behåller sin storlek) */
 html[data-text-size="large"] .app-zoom { zoom: 1.125; }
@@ -61,25 +58,36 @@ html[data-motion="reduce"] *::after {
 }
 
 html {
+  color-scheme: dark;
+  background: var(--color-paper);
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
   margin: 0;
-  background: var(--color-paper);
+  /* Blått ljus uppe till vänster, varmt orange nere till höger, som kvällsljus i en matsal. Står still. */
+  background:
+    radial-gradient(1100px 600px at 10% -120px, color-mix(in srgb, var(--color-accent) 24%, transparent), transparent 70%),
+    radial-gradient(900px 600px at 100% 110%, rgba(252, 115, 77, 0.14), transparent 70%),
+    linear-gradient(180deg, #082338, var(--color-paper) 60%);
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans);
   line-height: 1.55;
 }
 
+::selection { background: color-mix(in srgb, var(--color-accent) 40%, transparent); color: #fff; }
+* { scrollbar-width: thin; scrollbar-color: #2A5878 transparent; }
+
 @keyframes live-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  50% { opacity: 0.4; }
 }
 
 .live-dot {
-  animation: live-pulse 1.6s ease-in-out infinite;
+  animation: live-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px currentColor;
 }
 
 /* Klockan på "Mat klar" ringer lite */
@@ -90,7 +98,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .live-dot, .animate-ping, [class*="animate-"], .stagger > *, .skeleton, .scroll-reveal { animation: none !important; }
+  .live-dot, .animate-ping, [class*="animate-"], .stagger > *, .skeleton, .scroll-reveal, .btn::after { animation: none !important; }
   a.card:active, button.card:active, a.press:active, button.press:active, .card-lift:active { transform: none; }
 }
 
@@ -101,16 +109,18 @@ input[type="range"] {
 input:focus-visible,
 button:focus-visible,
 a:focus-visible {
-  outline: 3px solid #2563eb;
+  outline: 2px solid var(--color-accent-light);
   outline-offset: 2px;
 }
 
 /* ------------------------------------------------------------------
    Gemensamma byggstenar. Samma knappar, kort och fält på alla sidor.
-   Ligger i components-lagret så att vanliga Tailwind-klasser vinner. */
+   Ligger i components-lagret så att vanliga Tailwind-klasser vinner.
+   Ytorna har en tunn ljuskant upptill och djupa, mjuka skuggor: som riktiga
+   paneler i ett mörkt rum, inte platta tecknade rutor. */
 @layer components {
   .btn {
-    @apply inline-flex min-h-10 select-none items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out enabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40;
+    @apply relative inline-flex min-h-10 select-none items-center justify-center gap-2 overflow-hidden rounded-lg px-4 text-sm font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform,filter] duration-200 ease-out enabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40;
   }
   .btn-lg {
     @apply min-h-12 rounded-[10px] px-5 text-[15px];
@@ -118,38 +128,39 @@ a:focus-visible {
   .btn-sm {
     @apply min-h-8 rounded-md px-3 text-[13px];
   }
-  .btn-primary {
-    @apply bg-ink text-white enabled:hover:bg-black;
+  /* Huvudknapp: blå, med ljus överkant och ett sken som tänds vid hovring */
+  .btn-primary, .btn-accent {
+    @apply bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-accent)_88%,#fff),var(--color-accent)_45%,var(--color-accent-dark))] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.25),0_1px_2px_rgba(0,0,0,.6),0_6px_18px_-6px_color-mix(in_srgb,var(--color-accent)_55%,transparent)] enabled:hover:brightness-110 enabled:hover:shadow-[inset_0_1px_0_rgba(255,255,255,.3),0_1px_2px_rgba(0,0,0,.6),0_10px_28px_-6px_color-mix(in_srgb,var(--color-accent)_75%,transparent)];
   }
-  .btn-accent {
-    @apply bg-accent text-white enabled:hover:bg-accent-dark;
+  .btn-coral {
+    @apply bg-[linear-gradient(180deg,#FD8A6A,var(--color-coral)_45%,var(--color-coral-dark))] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.25),0_6px_18px_-6px_rgba(252,115,77,.6)] enabled:hover:brightness-110;
   }
   .btn-success {
-    @apply bg-teal text-white enabled:hover:bg-[#0B5E57];
+    @apply bg-[linear-gradient(180deg,#14B09E,var(--color-teal))] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_6px_18px_-8px_rgba(15,147,132,.7)] enabled:hover:brightness-110;
   }
   .btn-secondary {
-    @apply border border-[#D6D3CA] bg-white text-ink shadow-[0_1px_1px_rgba(15,20,25,.04)] enabled:hover:border-ink enabled:hover:shadow-[0_2px_6px_rgba(15,20,25,.08)];
+    @apply border border-line bg-surface-2 text-ink shadow-[inset_0_1px_0_rgba(255,255,255,.05),0_1px_2px_rgba(0,0,0,.5)] enabled:hover:border-coral/70 enabled:hover:bg-[#143B59];
   }
   .btn-ghost {
-    @apply text-muted enabled:hover:bg-ink/5 enabled:hover:text-ink;
+    @apply text-muted enabled:hover:bg-white/5 enabled:hover:text-ink;
   }
   .btn-icon {
     @apply h-10 w-10 px-0;
   }
 
   .card {
-    @apply rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(15,20,25,.04)];
+    @apply rounded-xl border border-line bg-[linear-gradient(180deg,#103250,var(--color-surface)_45%)] shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_1px_2px_rgba(0,0,0,.35),0_18px_40px_-22px_rgba(0,0,0,.6)];
   }
   /* Kort som går att trycka på lyfts lite vid hovring */
   .card-lift {
-    @apply transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,20,25,.08)] active:translate-y-0 active:scale-[0.985];
+    @apply transition-[transform,box-shadow,border-color] duration-300 ease-[cubic-bezier(.22,1,.36,1)] hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_20px_44px_-18px_rgba(0,0,0,.9),0_0_0_1px_color-mix(in_srgb,var(--color-accent)_20%,transparent)] active:translate-y-0 active:scale-[0.985];
   }
   .card-header {
     @apply flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-4 py-3 sm:px-5;
   }
 
   .field {
-    @apply min-h-11 w-full rounded-lg border border-[#D6D3CA] bg-white px-3 text-sm text-ink outline-none transition-colors placeholder:text-gray-400 focus:border-ink focus:ring-2 focus:ring-ink/10;
+    @apply min-h-11 w-full rounded-lg border border-line bg-[#081F31] px-3 text-sm text-ink shadow-[inset_0_1px_2px_rgba(0,0,0,.5)] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[#5A7080] hover:border-[#2A5878] focus:border-accent focus:ring-4 focus:ring-accent/20;
   }
   .field-label {
     @apply flex flex-col gap-1.5 text-[13px] font-semibold text-ink;
@@ -175,6 +186,84 @@ a:focus-visible {
       width: 2.75rem;
     }
   }
+}
+
+/* ------------------------------------------------------------------
+   Mörkt läge för Tailwinds standardfärger. Sidorna skrevs för ljus bakgrund
+   (bg-white, bg-red-50, text-red-800 ...). Här översätts de till mörka toner,
+   så att samma klasser fungerar utan att varje sida skrivs om.
+   Ligger utanför lagren, så de vinner över Tailwinds egna klasser. */
+.bg-white { background-color: var(--color-surface); }
+.bg-white\/80, .bg-white\/90, .bg-white\/95 { background-color: color-mix(in srgb, #08223A 88%, transparent); }
+.border-white { border-color: var(--color-paper); }
+.bg-ink { background-color: var(--color-accent); }
+.bg-ink\/40 { background-color: rgb(3 16 28 / 0.55); }
+.bg-ink\/50 { background-color: rgb(0 0 0 / 0.6); }
+.bg-ink\/70 { background-color: rgb(0 0 0 / 0.72); }
+.bg-ink\/85 { background-color: rgb(0 0 0 / 0.85); }
+
+.bg-gray-50 { background-color: #0A2336; }
+.bg-gray-100 { background-color: #10304A; }
+.bg-gray-200 { background-color: #153A57; }
+.bg-gray-300 { background-color: #1E4666; }
+.bg-gray-400 { background-color: #2A5575; }
+.border-gray-300 { border-color: #24506F; }
+.border-gray-400 { border-color: #2E5C7D; }
+.border-gray-500 { border-color: #3D6B8C; }
+.text-gray-300 { color: #4A5F6D; }
+.text-gray-400 { color: #6B8191; }
+.text-gray-500 { color: #7F94A3; }
+.text-gray-600 { color: #9DB0BC; }
+.text-gray-700 { color: #B7C7D2; }
+
+.bg-red-50, .bg-red-50\/60 { background-color: rgb(239 68 68 / 0.1); }
+.bg-red-100 { background-color: rgb(239 68 68 / 0.18); }
+.border-red-200 { border-color: rgb(239 68 68 / 0.3); }
+.border-red-300 { border-color: rgb(239 68 68 / 0.45); }
+.text-red-700, .text-red-800 { color: #FCA5A5; }
+.text-red-900 { color: #FECACA; }
+
+.bg-amber-50 { background-color: rgb(245 158 11 / 0.1); }
+.bg-amber-100 { background-color: rgb(245 158 11 / 0.18); }
+.border-amber-300 { border-color: rgb(245 158 11 / 0.4); }
+.text-amber-900 { color: #FCD34D; }
+
+.bg-violet-50, .bg-violet-50\/70 { background-color: rgb(139 92 246 / 0.12); }
+.bg-violet-100 { background-color: rgb(139 92 246 / 0.2); }
+.border-violet-200 { border-color: rgb(139 92 246 / 0.35); }
+.border-violet-300 { border-color: rgb(139 92 246 / 0.5); }
+.text-violet-800 { color: #C4B5FD; }
+.text-violet-900 { color: #DDD6FE; }
+
+.bg-blue-50 { background-color: rgb(2 151 222 / 0.12); }
+.bg-blue-100 { background-color: rgb(2 151 222 / 0.2); }
+.border-blue-200 { border-color: rgb(2 151 222 / 0.35); }
+.border-blue-300 { border-color: rgb(2 151 222 / 0.5); }
+.text-blue-800 { color: #7FD0F7; }
+.text-blue-900 { color: #B8E6FB; }
+
+.bg-emerald-200 { background-color: rgb(16 185 129 / 0.25); }
+.border-emerald-300 { border-color: rgb(16 185 129 / 0.45); }
+.text-emerald-800 { color: #6EE7B7; }
+.bg-sky-200 { background-color: rgb(14 165 233 / 0.25); }
+.border-sky-300 { border-color: rgb(14 165 233 / 0.45); }
+
+/* Utskrift (QR-koder, kameraskylt): vitt papper och svart text */
+@media print {
+  :root, html {
+    --color-ink: #02070A;
+    --color-paper: #fff;
+    --color-paper-soft: #fff;
+    --color-surface: #fff;
+    --color-line: #D0D7DD;
+    --color-line-soft: #E5EAEE;
+    --color-body: #26343E;
+    --color-muted: #475763;
+    color-scheme: light;
+    background: #fff;
+  }
+  body { background: #fff; }
+  .card, .bg-white { background: #fff; box-shadow: none; }
 }
 
 /* Vakti, chattens maskot */
@@ -207,25 +296,27 @@ a:focus-visible {
 .animate-vakti-pop { animation: vakti-pop 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
 
 /* ------------------------------------------------------------------
-   Rörelser. Stängs av med Inställningar → Färre rörelser (och mobilens eget val). */
+   Rörelser. Många, men aldrig alla på en gång: de körs när något händer
+   (sidan öppnas, man hovrar, trycker, något ändras), inte i en evig loop.
+   Stängs av med Inställningar → Färre rörelser (och mobilens eget val). */
 
 /* Innehåll glider upp när det visas */
 @keyframes rise {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: none; }
 }
-.animate-rise { animation: rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-rise { animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 /* Listor: varje rad kommer strax efter den förra */
-.stagger > * { animation: rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.stagger > *:nth-child(2) { animation-delay: 40ms; }
-.stagger > *:nth-child(3) { animation-delay: 80ms; }
-.stagger > *:nth-child(4) { animation-delay: 120ms; }
-.stagger > *:nth-child(5) { animation-delay: 160ms; }
-.stagger > *:nth-child(6) { animation-delay: 200ms; }
-.stagger > *:nth-child(7) { animation-delay: 240ms; }
-.stagger > *:nth-child(8) { animation-delay: 280ms; }
-.stagger > *:nth-child(n + 9) { animation-delay: 320ms; }
+.stagger > * { animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 250ms; }
+.stagger > *:nth-child(7) { animation-delay: 300ms; }
+.stagger > *:nth-child(8) { animation-delay: 350ms; }
+.stagger > *:nth-child(n + 9) { animation-delay: 400ms; }
 
 /* Långa sidor: varje del glider in när man skrollar fram till den. Webbläsaren sköter det
    själv (ingen JavaScript); äldre webbläsare visar delarna direkt. */
@@ -243,16 +334,44 @@ a.card, button.card, a.press, button.press {
 }
 a.card:active, button.card:active, a.press:active, button.press:active { transform: scale(0.985); }
 
-/* Laddar: en ljus våg sveper över grå rutor */
+/* Kort får en blå kant när muspekaren är över dem */
+@media (hover: hover) {
+  .card { transition: border-color 0.25s, box-shadow 0.3s; }
+  .card:hover { border-color: #2A5878; }
+}
+
+/* Knappar: ett ljusstråk sveper över en gång vid hovring */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.22) 50%, transparent 62%) no-repeat;
+  background-size: 250% 100%;
+  background-position: 150% 0;
+}
+.btn:enabled:hover::after, a.btn:hover::after { animation: btn-shine 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+.btn-secondary::after, .btn-ghost::after { background-image: linear-gradient(105deg, transparent 38%, rgba(92, 200, 245, 0.12) 50%, transparent 62%); }
+@keyframes btn-shine { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+
+/* Logotypen: lutar till när man hovrar */
+.logo-mark { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+a:hover .logo-mark { transform: rotate(-6deg) scale(1.06); }
+
+/* Ikonen i menyn studsar till när sidan väljs */
+@keyframes icon-bounce { 0% { transform: scale(1); } 40% { transform: scale(1.2) rotate(-6deg); } 100% { transform: scale(1); } }
+.icon-bounce { animation: icon-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Laddar: en ljus våg sveper över mörka rutor */
 @keyframes shimmer {
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
 }
 .skeleton {
   border-radius: 0.75rem;
-  background: linear-gradient(90deg, var(--color-line-soft) 25%, var(--color-paper-soft) 50%, var(--color-line-soft) 75%);
+  background: linear-gradient(90deg, var(--color-line-soft) 25%, #1D4565 50%, var(--color-line-soft) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
+  animation: shimmer 1.6s ease-in-out infinite;
 }
 
 /* Något nytt eller ändrat blinkar till en gång */
@@ -265,10 +384,58 @@ a.card:active, button.card:active, a.press:active, button.press:active { transfo
 
 /* Bordets färg glider mjukt till den nya statusen */
 @keyframes status-flash {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 45%, transparent); }
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent); }
   100% { box-shadow: 0 0 0 14px transparent; }
 }
 .animate-status-flash { animation: status-flash 0.9s ease-out; }
+
+/* Inloggning, konto och betalning: mörkt rum med ett blått ljus bakom kortet */
+.aurora-bg {
+  position: relative;
+  background:
+    radial-gradient(700px 420px at 35% 30%, color-mix(in srgb, var(--color-accent) 24%, transparent), transparent 70%),
+    radial-gradient(600px 400px at 75% 80%, rgba(252, 115, 77, 0.16), transparent 70%),
+    var(--color-paper);
+}
+.glow-border {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 18%, transparent),
+    0 30px 80px -30px color-mix(in srgb, var(--color-accent) 45%, transparent),
+    0 20px 50px -20px rgba(0, 0, 0, 0.9);
+}
+
+/* Riktiga foton i Bordvakts färger: blå skuggor, orange ljus (som en filmgradering).
+   Bilden zoomar sakta in bara när muspekaren är över. */
+.photo-graded { position: relative; overflow: hidden; isolation: isolate; background: #0A2336; }
+.photo-graded img { filter: saturate(1.08) contrast(1.06); transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1); }
+.photo-graded:hover img { transform: scale(1.05); }
+.photo-graded::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(2, 151, 222, 0.55), rgba(2, 151, 222, 0.05) 50%, rgba(252, 115, 77, 0.45));
+  mix-blend-mode: soft-light;
+}
+.photo-graded::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 35%, rgba(6, 27, 43, 0.9));
+}
+.photo-graded > .photo-caption { position: absolute; z-index: 2; inset: auto 0 0 0; }
+
+/* Pekskärm (mobil, platta): hovringseffekter ska inte fastna efter ett tryck.
+   Trycket i sig ger fortfarande en kort "ge efter"-rörelse (active). */
+@media (hover: none) {
+  .card-lift:hover { transform: none; }
+  .photo-graded:hover img { transform: none; }
+  .btn:enabled:hover::after, a.btn:hover::after { animation: none; }
+}
 
 /* Villkor, integritetspolicy och PUB-avtal */
 .legal h2 { font-family: var(--font-display, inherit); font-weight: 700; font-size: 1.15rem; color: var(--color-ink, inherit); margin-top: 1rem; }

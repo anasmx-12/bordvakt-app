@@ -166,7 +166,9 @@ export default function SetupChat() {
         const data = await res.json().catch(() => ({}));
         const step = status?.complete ? 'done' : (status?.step ?? 'restaurant');
         reply(
-          data.fallback
+          data.notInstalled
+            ? t('chat.notInstalled')
+            : data.fallback
             ? `${t('chat.fallback')}\n${engineOff ? t('chat.problem.engineOff') : t(`chat.tip.${step}`)}`
             : (data.error ?? t('chat.error'))
         );

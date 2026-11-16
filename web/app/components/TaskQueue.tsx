@@ -168,7 +168,7 @@ export default function TaskQueue({
               <motion.div
                 key={`order-${order.id}`}
                 {...ENTER}
-                className={`flex items-center gap-3 rounded-lg border border-[#9FD0C8] bg-teal-light p-3 ${
+                className={`flex items-center gap-3 rounded-lg border border-[#1D5A55] bg-teal-light p-3 ${
                   selected ? 'ring-2 ring-ink' : ''
                 }`}
               >
@@ -186,7 +186,7 @@ export default function TaskQueue({
                   </span>
                   <span className="flex min-w-0 flex-col">
                     <span className="text-sm font-semibold text-ink">{t('tasks.foodReady')}</span>
-                    <span className="truncate text-xs text-[#1F3B38]">
+                    <span className="truncate text-xs text-[#A9C9C4]">
                       {orderSummary(order, t('order.empty'))}
                       {order.ready_at && ` · ${timeAgo(order.ready_at, now, t)}`}
                     </span>

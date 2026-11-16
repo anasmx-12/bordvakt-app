@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { CheckCircle2, MonitorSmartphone, Share, X } from 'lucide-react';
 import { useInstall } from '@/lib/useDevice';
 import { useT } from '@/lib/i18n';
@@ -14,6 +14,13 @@ function dismissed() {
     return false;
   }
 }
+// Läses efter första ritningen (servern vet inte vad som sparats i webbläsaren), annars blir
+// serverns och webbläsarens HTML olika (hydreringsfel).
+const dismissListeners = new Set<() => void>();
+const subscribeDismissed = (l: () => void) => {
+  dismissListeners.add(l);
+  return () => dismissListeners.delete(l);
+};
 
 /**
  * "Lägg Bordvakt på hemskärmen": en knapp där webbläsaren erbjuder det, annars stegen.
@@ -22,15 +29,15 @@ function dismissed() {
 export default function InstallCard({ inline = false }: { inline?: boolean }) {
   const t = useT();
   const { method, install } = useInstall();
-  const [hidden, setHidden] = useState(() => typeof window !== 'undefined' && inline && dismissed());
+  const hidden = useSyncExternalStore(subscribeDismissed, () => inline && dismissed(), () => true);
 
   if (inline && (hidden || method === 'installed')) return null;
 
   function hide() {
-    setHidden(true);
     try {
       localStorage.setItem(DISMISSED, '1');
     } catch {}
+    dismissListeners.forEach((l) => l());
   }
 
   if (method === 'installed') {

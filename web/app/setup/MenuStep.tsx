@@ -251,7 +251,7 @@ export default function MenuStep({ onDone }: { onDone: () => void }) {
                       <button
                         type="button"
                         onClick={() => toggleAvailable(item)}
-                        className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${item.available ? 'bg-teal-light text-[#0F5C55]' : 'bg-red-50 text-red-800'}`}
+                        className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${item.available ? 'bg-teal-light text-[#7EE0D2]' : 'bg-red-50 text-red-800'}`}
                         title="Tryck för att ändra"
                       >
                         {item.available ? 'Finns' : 'Slut i dag'}

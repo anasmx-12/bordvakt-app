@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Check, CreditCard, KeyRound, Loader2, Volume2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { hasAccess, PlanId } from '@/lib/plans';
-import { Accent, Settings, StartPage, TextSize, Theme, updateSettings, useSettings } from '@/lib/settings';
+import { Accent, Settings, StartPage, TextSize, updateSettings, useSettings } from '@/lib/settings';
 import { Key, LANGUAGES, useFormatDate, useT } from '@/lib/i18n';
 import { useStaffAlerts } from '@/lib/useStaffAlerts';
 import AppShell from '../components/AppShell';
@@ -30,7 +30,9 @@ interface Billing {
 }
 
 const ACCENTS: { id: Accent; label: Key; color: string }[] = [
-  { id: 'orange', label: 'set.accentOrange', color: '#c2410c' },
+  // "orange" är standardvalet och betyder Bordvakt-blått (id:t behålls för sparade inställningar)
+  { id: 'orange', label: 'set.accentBrand', color: '#0297DE' },
+  { id: 'coral', label: 'set.accentOrange', color: '#FC734D' },
   { id: 'blue', label: 'set.accentBlue', color: '#1d4ed8' },
   { id: 'green', label: 'set.accentGreen', color: '#15803d' },
   { id: 'purple', label: 'set.accentPurple', color: '#7e22ce' },
@@ -68,17 +70,6 @@ export default function SettingsPage() {
         <div className="flex flex-col gap-5">
           {/* Utseende */}
           <Card title={t('set.appearance')}>
-            <Row label={t('set.theme')}>
-              <Segmented<Theme>
-                value={s.theme}
-                onChange={(theme) => set({ theme })}
-                options={[
-                  { id: 'light', label: t('set.themeLight') },
-                  { id: 'dark', label: t('set.themeDark') },
-                  { id: 'system', label: t('set.themeSystem') },
-                ]}
-              />
-            </Row>
             <Row label={t('set.accent')}>
               <div role="radiogroup" aria-label={t('set.accent')} className="flex flex-wrap gap-2">
                 {ACCENTS.map((a) => {

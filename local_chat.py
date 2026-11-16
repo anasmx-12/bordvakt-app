@@ -125,7 +125,12 @@ Regler:
 
 
 class ChatUnavailable(Exception):
-    """Ollama är inte igång eller modellen saknas."""
+    """Ollama är inte igång eller modellen saknas.
+    code = "not_installed" när chatten aldrig har installerats på den här datorn."""
+
+    def __init__(self, message: str, code: str = "unavailable"):
+        super().__init__(message)
+        self.code = code
 
 
 def clean_messages(messages) -> list[dict]:
@@ -198,6 +203,8 @@ def open_chat(messages, facts: str, language: str = "sv"):
     if not history:
         raise ValueError("Skriv en fråga.")
     if not ensure_server():
+        if not _ollama_bin():
+            raise ChatUnavailable("Chatten är inte installerad på datorn (Ollama saknas).", "not_installed")
         raise ChatUnavailable("Ollama är inte igång.")
     body = json.dumps({
         "model": CHAT_MODEL,
@@ -213,7 +220,7 @@ def open_chat(messages, facts: str, language: str = "sv"):
     except urllib.error.HTTPError as e:
         detail = e.read().decode(errors="replace")
         if e.code == 404 or "not found" in detail:
-            raise ChatUnavailable(f"Modellen {CHAT_MODEL} saknas. Kör: ollama pull {CHAT_MODEL}") from e
+            raise ChatUnavailable(f"Modellen {CHAT_MODEL} saknas. Kör: ollama pull {CHAT_MODEL}", "not_installed") from e
         raise ChatUnavailable(f"Ollama svarade med fel {e.code}.") from e
     except Exception as e:
         raise ChatUnavailable("Ollama svarar inte.") from e

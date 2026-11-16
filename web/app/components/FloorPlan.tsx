@@ -47,15 +47,15 @@ interface Props {
 const ELEMENT_STYLE: Record<ElementKind, string> = {
   wall: 'bg-ink/85',
   window: 'bg-sky-200 border border-sky-300',
-  bar: 'bg-[#E9DCCB] border border-[#C9AE8C] text-[#6B4F2E]',
-  counter: 'bg-[#E9DCCB] border border-[#C9AE8C] text-[#6B4F2E]',
+  bar: 'bg-[#2A2218] border border-[#4A3B28] text-[#D9C3A3]',
+  counter: 'bg-[#2A2218] border border-[#4A3B28] text-[#D9C3A3]',
   kitchen: 'bg-gray-200 border border-gray-300 text-gray-600 bg-[repeating-linear-gradient(45deg,transparent_0_6px,rgba(0,0,0,.05)_6px_12px)]',
-  entrance: 'border-2 border-dashed border-accent text-accent-dark bg-[#FDF1EA]',
+  entrance: 'border-2 border-dashed border-accent text-accent-dark bg-[#2A1510]',
   plant: 'bg-emerald-200 border border-emerald-300 text-emerald-800',
   pillar: 'bg-gray-400',
   restroom: 'bg-gray-100 border border-gray-300 text-gray-600',
-  sofa: 'bg-[#DDD3C6] border border-[#B9AA98] text-[#5E4B37]',
-  decor: 'bg-[#F1E6F3] border border-[#D6BEDC] text-[#6B3F75]',
+  sofa: 'bg-[#26211C] border border-[#463C31] text-[#CDBBA5]',
+  decor: 'bg-[#241A28] border border-[#45304D] text-[#D9B8E2]',
   other: 'bg-gray-100 border border-dashed border-gray-300 text-gray-500',
 };
 
@@ -127,7 +127,7 @@ export default function FloorPlan({ aspectRatio, tables, elements, selectedKey, 
   return (
     <div
       onClick={() => onSelect?.(null)}
-      className="relative w-full overflow-hidden rounded-[14px] border border-line bg-paper-soft bg-[linear-gradient(#EEECE6_1px,transparent_1px),linear-gradient(90deg,#EEECE6_1px,transparent_1px)] bg-[size:24px_24px]"
+      className="relative w-full overflow-hidden rounded-[14px] border border-line bg-paper-soft bg-[linear-gradient(#0F1D26_1px,transparent_1px),linear-gradient(90deg,#0F1D26_1px,transparent_1px)] bg-[size:24px_24px]"
       style={{ aspectRatio }}
     >
       {/* Marginal inuti ramen så att stolar vid kanten syns */}
@@ -223,7 +223,7 @@ export default function FloorPlan({ aspectRatio, tables, elements, selectedKey, 
                 key={i}
                 aria-hidden="true"
                 className={`pointer-events-none absolute h-[8px] w-[17px] rounded-[3px] border-[1.5px] ${
-                  seated ? 'border-[#8C96A3] bg-[#B4BCC6]' : 'border-[#CFCBC0] bg-white'
+                  seated ? 'border-[#3E5466] bg-[#2A3D4B]' : 'border-[#2A3D4B] bg-white'
                 }`}
                 style={{ left: c.left, top: c.top, transform: `translate(-50%, -50%) rotate(${c.rotate}deg)` }}
               />
@@ -245,7 +245,7 @@ export default function FloorPlan({ aspectRatio, tables, elements, selectedKey, 
             {!(t.readyOrders ?? 0) && (t.cookingOrders ?? 0) > 0 && (
               <span
                 title={tr('order.PREPARING')}
-                className="pointer-events-none absolute -right-2 -top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-[#FEF3C7] text-[#92400E] shadow-sm"
+                className="pointer-events-none absolute -right-2 -top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-[#2E2410] text-[#FCD34D] shadow-sm"
               >
                 <ChefHat className="h-3 w-3" strokeWidth={2.4} />
               </span>

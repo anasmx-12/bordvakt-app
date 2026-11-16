@@ -100,10 +100,10 @@ export const STATUS_STYLE: Record<
     label: 'Ledigt',
     level: 'normal',
     box: 'border-emerald-400 bg-emerald-400/10',
-    tile: 'border-[#B9DAD4] bg-teal-light',
+    tile: 'border-[#1D5A55] bg-teal-light',
     chip: 'bg-teal text-white',
     dot: 'bg-teal',
-    table: 'border-[#7DBDB4] bg-teal-light text-[#0F5C55]',
+    table: 'border-[#237069] bg-teal-light text-[#7EE0D2]',
   },
   OCCUPIED: {
     label: 'Upptaget',
@@ -172,11 +172,11 @@ export const STATUS_STYLE: Record<
     label: 'Kameran ser inte bordet',
     level: 'error',
     box: 'border-dashed border-gray-300 bg-gray-900/40',
-    tile: 'border-dashed border-gray-400 bg-[repeating-linear-gradient(45deg,#F3F4F6_0_6px,#E5E7EB_6px_12px)]',
+    tile: 'border-dashed border-gray-400 bg-[repeating-linear-gradient(45deg,#0C1820_0_6px,#13232E_6px_12px)]',
     chip: 'bg-gray-700 text-white',
     dot: 'bg-gray-500',
     table:
-      'border-dashed border-gray-500 text-gray-700 bg-[repeating-linear-gradient(45deg,#F3F4F6_0_6px,#E5E7EB_6px_12px)]',
+      'border-dashed border-gray-500 text-gray-700 bg-[repeating-linear-gradient(45deg,#0C1820_0_6px,#13232E_6px_12px)]',
   },
 };
 
@@ -228,7 +228,7 @@ export const isActiveOrder = (o: Order) => o.status !== 'COMPLETED' && o.status 
 export const ORDER_STYLE: Record<OrderStatus, { label: string; chip: string; next?: string }> = {
   PENDING_APPROVAL: { label: 'Väntar på godkännande', chip: 'bg-violet-100 text-violet-800', next: 'Godkänn' },
   RECEIVED: { label: 'Mottagen', chip: 'bg-gray-100 text-gray-700', next: 'Börja laga' },
-  PREPARING: { label: 'Tillagas', chip: 'bg-[#FEF3C7] text-[#92400E]', next: 'Klar i köket' },
+  PREPARING: { label: 'Tillagas', chip: 'bg-[#2E2410] text-[#FCD34D]', next: 'Klar i köket' },
   READY: { label: 'Klar att servera', chip: 'bg-teal text-white', next: 'Serverad' },
   SERVED: { label: 'Serverad', chip: 'bg-blue-50 text-blue-800', next: 'Avsluta' },
   COMPLETED: { label: 'Avslutad', chip: 'bg-gray-100 text-gray-500' },

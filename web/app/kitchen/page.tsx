@@ -146,7 +146,7 @@ export default function KitchenPage() {
           {COLUMNS.map((col) => {
             const list = orders.filter((o) => o.status === col.status);
             return (
-              <section key={col.status} className="flex flex-col gap-3 rounded-xl bg-[#EEECE6]/60 p-3">
+              <section key={col.status} className="flex flex-col gap-3 rounded-xl bg-line-soft/60 p-3">
                 <h2 className="flex items-center justify-between px-1 pt-1 text-[15px] font-semibold">
                   <span className="flex items-center gap-2">
                     <span className={`h-2.5 w-2.5 rounded-full ${col.dot}`} />
@@ -178,7 +178,7 @@ export default function KitchenPage() {
                           late
                             ? 'border-red-300 ring-1 ring-red-300'
                             : order.status === 'READY'
-                              ? 'border-[#9FD0C8]'
+                              ? 'border-[#1D5A55]'
                               : ''
                         }`}
                       >
@@ -204,7 +204,7 @@ export default function KitchenPage() {
                         </ul>
                         <Eta left={left} />
                         {order.note && (
-                          <p className="rounded-lg bg-[#FEF3C7] px-3 py-2 text-sm text-[#92400E]">{order.note}</p>
+                          <p className="rounded-lg bg-[#2E2410] px-3 py-2 text-sm text-[#FCD34D]">{order.note}</p>
                         )}
                         {order.status === 'RECEIVED' && (
                           <button

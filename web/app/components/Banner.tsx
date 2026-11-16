@@ -1,9 +1,9 @@
 import { AlertTriangle, CameraOff, Info } from 'lucide-react';
 
 const TONES = {
-  warning: { box: 'border-[#F3C9B0] bg-[#FDF1EA] text-[#7C2D12]', icon: AlertTriangle, iconColor: 'text-accent' },
+  warning: { box: 'border-[#5A2A1C] bg-[#2A1510] text-[#FFB39E]', icon: AlertTriangle, iconColor: 'text-accent' },
   camera: { box: 'border-gray-300 bg-gray-50 text-gray-700', icon: CameraOff, iconColor: 'text-gray-600' },
-  info: { box: 'border-[#B9DAD4] bg-teal-light text-[#134E48]', icon: Info, iconColor: 'text-teal' },
+  info: { box: 'border-[#1D5A55] bg-teal-light text-[#7EE0D2]', icon: Info, iconColor: 'text-teal' },
 } as const;
 
 interface Props {

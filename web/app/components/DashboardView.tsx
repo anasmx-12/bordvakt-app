@@ -108,7 +108,7 @@ export default function DashboardView(p: DashboardViewProps) {
           {p.extraActions}
           <span
             className={`inline-flex h-10 items-center gap-2 rounded-lg px-3 text-[13px] font-semibold ${
-              p.isConnected ? 'bg-teal-light text-[#0F5C55]' : 'bg-[#FDF1EA] text-accent-dark'
+              p.isConnected ? 'bg-teal-light text-[#7EE0D2]' : 'bg-[#2A1510] text-accent-dark'
             }`}
           >
             <span className={`live-dot h-2 w-2 rounded-full ${p.isConnected ? 'bg-teal' : 'bg-accent'}`} />
@@ -181,7 +181,7 @@ export default function DashboardView(p: DashboardViewProps) {
           label={t('dash.foodToServe')}
           value={readyOrders.length}
           icon={BellRing}
-          tone={readyOrders.length > 0 ? 'bg-teal-light border-[#B9DAD4] text-teal' : null}
+          tone={readyOrders.length > 0 ? 'bg-teal-light border-[#1D5A55] text-teal' : null}
         />
         <Stat
           label={t('dash.dessert')}
