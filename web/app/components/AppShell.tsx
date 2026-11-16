@@ -121,7 +121,7 @@ export default function AppShell({ title, subtitle, actions, children }: Props) 
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Toppfält (mobil och surfplatta) */}
-        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
+        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-white/90 px-4 py-3 lg:hidden">
           <Link href="/matsal" aria-label={t('nav.toDining')}>
             <Logo />
           </Link>
@@ -171,7 +171,7 @@ export default function AppShell({ title, subtitle, actions, children }: Props) 
       <nav
         aria-label={t('nav.menu')}
         style={{ gridTemplateColumns: `repeat(${mobileLinks.length}, minmax(0, 1fr))` }}
-        className="fixed inset-x-0 bottom-0 z-40 grid border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 grid border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
         {mobileLinks.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;

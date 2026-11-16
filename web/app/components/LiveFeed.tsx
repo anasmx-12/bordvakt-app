@@ -142,7 +142,7 @@ export default function LiveFeed({
               );
             })}
 
-            <div className="absolute right-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-ink/70 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
+            <div className="absolute right-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-ink/70 px-2.5 py-1 text-[11px] font-semibold text-white">
               <span className="live-dot h-[7px] w-[7px] rounded-full bg-accent-light" />
               {camera.name}
             </div>

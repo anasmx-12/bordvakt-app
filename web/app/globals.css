@@ -66,16 +66,28 @@ html {
 
 body {
   margin: 0;
-  /* Blått ljus uppe till vänster, varmt orange nere till höger, som kvällsljus i en matsal. Står still. */
-  background:
-    radial-gradient(1100px 600px at 10% -120px, color-mix(in srgb, var(--color-accent) 24%, transparent), transparent 70%),
-    radial-gradient(900px 600px at 100% 110%, rgba(252, 115, 77, 0.14), transparent 70%),
-    linear-gradient(180deg, #082338, var(--color-paper) 60%);
-  background-attachment: fixed;
+  background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
   line-height: 1.55;
 }
+
+/* Blått ljus uppe till vänster, varmt orange nere till höger, som kvällsljus i en matsal. Står still.
+   Eget fast lager i stället för background-attachment: fixed, som ritar om hela sidan vid varje
+   skroll (det var det som gjorde skrollningen trög, särskilt på mobil). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 600px at 10% -120px, color-mix(in srgb, var(--color-accent) 24%, transparent), transparent 70%),
+    radial-gradient(900px 600px at 100% 110%, rgba(252, 115, 77, 0.14), transparent 70%),
+    linear-gradient(180deg, #082338, var(--color-paper) 60%);
+  transform: translateZ(0);
+}
+@media print { body::before { display: none; } }
 
 ::selection { background: color-mix(in srgb, var(--color-accent) 40%, transparent); color: #fff; }
 * { scrollbar-width: thin; scrollbar-color: #2A5878 transparent; }
@@ -194,7 +206,7 @@ a:focus-visible {
    så att samma klasser fungerar utan att varje sida skrivs om.
    Ligger utanför lagren, så de vinner över Tailwinds egna klasser. */
 .bg-white { background-color: var(--color-surface); }
-.bg-white\/80, .bg-white\/90, .bg-white\/95 { background-color: color-mix(in srgb, #08223A 88%, transparent); }
+.bg-white\/80, .bg-white\/90, .bg-white\/95 { background-color: color-mix(in srgb, #08223A 97%, transparent); }
 .border-white { border-color: var(--color-paper); }
 .bg-ink { background-color: var(--color-accent); }
 .bg-ink\/40 { background-color: rgb(3 16 28 / 0.55); }

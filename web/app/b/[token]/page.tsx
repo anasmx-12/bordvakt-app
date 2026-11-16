@@ -199,7 +199,7 @@ export default function GuestOrderPage({ params }: { params: Promise<{ token: st
 
   return (
     <div dir={rtl ? 'rtl' : 'ltr'} lang={lang} className="min-h-dvh bg-paper text-ink">
-      <header className="sticky top-0 z-20 border-b border-line bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-line bg-white/95">
         <div className="mx-auto flex max-w-xl items-center gap-3 px-4 py-3">
           {view !== 'menu' ? (
             <button type="button" onClick={() => setView('menu')} aria-label={t('guest.back')} className="btn btn-ghost btn-icon">
@@ -407,7 +407,7 @@ export default function GuestOrderPage({ params }: { params: Promise<{ token: st
             initial={{ y: 80 }}
             animate={{ y: 0 }}
             exit={{ y: 80 }}
-            className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur"
+            className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)]"
           >
             <button type="button" onClick={() => setView('cart')} className="btn btn-primary btn-lg mx-auto flex w-full max-w-xl justify-between">
               <span className="flex items-center gap-2">

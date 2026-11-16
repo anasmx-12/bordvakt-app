@@ -46,6 +46,10 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: securityHeaders },
       // Inloggade sidor och API-svar sparas aldrig i delade cacher
       { source: "/api/:path*", headers: [{ key: "Cache-Control", value: "no-store" }] },
+      // Foton och landningssidans filer: sparas i webbläsaren en dag (och uppdateras i bakgrunden),
+      // så att sidan öppnas direkt andra gången
+      { source: "/photos/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }] },
+      { source: "/landing/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" }] },
     ];
   },
   // Gör att appen kan provas på en mobil i samma wifi (http://datorns-ip:3000)
